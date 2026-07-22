@@ -10,6 +10,8 @@ async function initDB() {
             host: process.env.DB_HOST || '127.0.0.1',
             user: process.env.DB_USER || 'root',
             password: process.env.DB_PASSWORD || '',
+            port: process.env.DB_PORT || 3306,
+            ssl: process.env.NODE_ENV === 'production' ? { minVersion: 'TLSv1.2', rejectUnauthorized: true } : undefined,
             multipleStatements: true // VERY IMPORTANT for running SQL scripts
         });
 
