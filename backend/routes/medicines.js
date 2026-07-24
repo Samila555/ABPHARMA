@@ -73,8 +73,8 @@ router.post('/', authenticate, authorize('admin', 'pharmacist'), upload('medicin
         drug_interactions, storage_conditions, pregnancy_category, breastfeeding_info, adult_dosage,
         child_dosage, overdose_info, missed_dose_info, strength, dosage_form, unit,
         purchase_price, selling_price, quantity, min_stock_level, batch_number, expiry_date,
-        image, requires_prescription, is_featured, status)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        image, requires_prescription, is_featured, status, is_active)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)`,
             [name, brand_name, generic_name, barcode, category_id || null, supplier_id || null,
                 manufacturer, description, uses, indications, contraindications, warnings, side_effects,
                 drug_interactions, storage_conditions, pregnancy_category || 'N', breastfeeding_info,
