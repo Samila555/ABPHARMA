@@ -74,17 +74,12 @@ export default function CustomerNavbar() {
                 />
                 <span className="relative flex items-center gap-1.5 text-teal-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-                    Free delivery on orders above ETB 5,000
+                    Expert pharmacists available 24/7 in store
                 </span>
                 <span className="hidden sm:block text-slate-500">|</span>
                 <span className="hidden sm:flex items-center gap-1.5 text-sky-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
                     HEALTH20 ETB  20% off today
-                </span>
-                <span className="hidden md:block text-slate-500">|</span>
-                <span className="hidden md:flex items-center gap-1.5 text-indigo-300">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                    Same-day delivery available
                 </span>
             </div>
 
