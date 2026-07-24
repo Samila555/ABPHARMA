@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: abpharma
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - fromGroup: abpharma-env
