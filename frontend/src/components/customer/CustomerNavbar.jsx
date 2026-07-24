@@ -224,30 +224,7 @@ export default function CustomerNavbar() {
                             </Link>
                         </div>
 
-                        {/* Sign In / User */}
-                        {isAuthenticated ? (
-                            <Link
-                                to="/admin/dashboard"
-                                className="hidden sm:flex items-center gap-2 h-10 px-5 rounded-full text-[14px] font-bold text-white shadow-lg shadow-slate-300/40 hover:shadow-slate-400/40 hover:-translate-y-px active:translate-y-0 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-                                style={{ background: 'linear-gradient(135deg,#1e293b,#334155)' }}
-                                aria-label="Dashboard"
-                            >
-                                <div className="w-5 h-5 rounded-full bg-teal-400 flex items-center justify-center text-white text-[10px] font-black flex-shrink-0">
-                                    {user?.name?.charAt(0) || 'U'}
-                                </div>
-                                {user?.name?.split(' ')[0] || 'Account'}
-                            </Link>
-                        ) : (
-                            <Link
-                                to="/admin/login"
-                                className="hidden sm:flex items-center gap-2 h-10 px-5 rounded-full text-[14px] font-bold text-white shadow-lg shadow-slate-300/40 hover:shadow-slate-400/40 hover:-translate-y-px active:translate-y-0 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-                                style={{ background: 'linear-gradient(135deg,#1e293b,#334155)' }}
-                                aria-label="Sign In"
-                            >
-                                <LogIn size={15} aria-hidden="true" />
-                                Sign In
-                            </Link>
-                        )}
+
 
                         {/* Hamburger */}
                         <button
@@ -376,17 +353,7 @@ export default function CustomerNavbar() {
                             <FiShield size={16} aria-hidden="true" />
                             Go to Dashboard
                         </Link>
-                    ) : (
-                        <Link
-                            to="/admin/login"
-                            onClick={() => setMobileOpen(false)}
-                            className="flex items-center justify-center gap-2.5 w-full h-12 rounded-2xl text-[15px] font-bold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-                            style={{ background: 'linear-gradient(135deg,#1e293b,#334155)' }}
-                        >
-                            <LogIn size={16} aria-hidden="true" />
-                            Sign In
-                        </Link>
-                    )}
+                    ) : null}
                     <p className="text-center text-[10.5px] text-gray-400 mt-4 tracking-widest uppercase font-semibold">
                         ABPharma �� Smart Pharmacy
                     </p>
