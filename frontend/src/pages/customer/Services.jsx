@@ -27,8 +27,8 @@ const FLOATING_DECOR = [
 ];
 
 const SERVICES = [
-    { id: 0, title: 'Prescription Fulfillment', icon: FiActivity, desc: 'Upload your prescription and we will prepare your medicines for pickup immediately.', gradient: 'from-blue-600 via-sky-500 to-cyan-400', bg: 'bg-blue-50', border: 'border-blue-200/40', textColor: 'text-blue-700', shadowColor: 'rgba(14,165,233,0.2)', highlights: ['Fast processing', 'Free pickup', 'Digital records', 'Insurance support'] },
-    { id: 1, title: 'Drive-thru Pickup', icon: FiCheckCircle, desc: 'Health emergencies dont wait. We provide fast lane drive-thru pickups for your online orders.', gradient: 'from-emerald-600 via-teal-500 to-green-400', bg: 'bg-emerald-50', border: 'border-emerald-200/40', textColor: 'text-emerald-700', shadowColor: 'rgba(5,150,105,0.2)', highlights: ['Skip the queue', 'Express packing', 'Vehicle assist', 'No contact'] },
+    { id: 0, title: 'Prescription Fulfillment', icon: FiActivity, desc: 'Upload your prescription and we will prepare your medicines for pickup or delivery immediately.', gradient: 'from-blue-600 via-sky-500 to-cyan-400', bg: 'bg-blue-50', border: 'border-blue-200/40', textColor: 'text-blue-700', shadowColor: 'rgba(14,165,233,0.2)', highlights: ['Fast processing', 'Free pickup', 'Digital records', 'Insurance support'] },
+    { id: 1, title: '24/7 Delivery', icon: FiTruck, desc: 'Health emergencies dont wait. We provide round-the-clock delivery services within the city limits.', gradient: 'from-emerald-600 via-teal-500 to-green-400', bg: 'bg-emerald-50', border: 'border-emerald-200/40', textColor: 'text-emerald-700', shadowColor: 'rgba(5,150,105,0.2)', highlights: ['Same-day delivery', 'Live tracking', 'Contactless drop', 'City-wide'] },
     { id: 2, title: 'Pharmacist Consultations', icon: FiUsers, desc: 'Get free professional advice on medication dosage, interactions, and general health.', gradient: 'from-violet-600 via-purple-500 to-fuchsia-400', bg: 'bg-violet-50', border: 'border-violet-200/40', textColor: 'text-violet-700', shadowColor: 'rgba(139,92,246,0.2)', highlights: ['Expert pharmacists', 'Private sessions', 'Follow-up care', 'Free advice'] },
     { id: 3, title: 'Health Screenings', icon: FiHeart, desc: 'Visit our physical store for quick blood pressure, blood sugar, and BMI checks.', gradient: 'from-rose-600 via-pink-500 to-red-400', bg: 'bg-rose-50', border: 'border-rose-200/40', textColor: 'text-rose-700', shadowColor: 'rgba(244,63,94,0.2)', highlights: ['No appointment', 'Instant results', 'Free checkups', 'Quarterly plans'] },
     { id: 4, title: 'Authentic Medications', icon: FiShield, desc: 'We source directly from manufacturers and certified distributors to guarantee 100% genuine products.', gradient: 'from-amber-600 via-orange-500 to-yellow-400', bg: 'bg-amber-50', border: 'border-amber-200/40', textColor: 'text-amber-700', shadowColor: 'rgba(245,158,11,0.2)', highlights: ['Certified sources', 'Quality assured', 'Money-back', 'Tracked batches'] },
@@ -271,7 +271,7 @@ export default function Services() {
                         <h2 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
                             Your Health, <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-emerald-300">Our Mission</span>
                         </h2>
-                        <p className="text-sky-100 text-xl font-light">Join thousands of satisfied patients who trust AB Pharma for genuine medicines, expert care, and easy pickup options.</p>
+                        <p className="text-sky-100 text-xl font-light">Join thousands of satisfied patients who trust AB Pharma for genuine medicines, expert care, and lightning-fast delivery.</p>
                     </div>
 
                     <div className="relative z-10 flex flex-col sm:flex-row gap-5">
