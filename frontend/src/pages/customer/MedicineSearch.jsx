@@ -344,7 +344,7 @@ function MedicineCard({ m, catColors, idx, addItem, fmt }) {
                 )}
 
                 {m.image ? (
-                    <img src={m.image} alt={m.name} style={{ width: '100%', maxHeight: 120, objectFit: 'contain', transform: hovered ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.4s ease', mixBlendMode: 'multiply' }} />
+                    <img src={m.image} alt={m.name} style={{ width: '100%', maxHeight: 120, objectFit: 'contain', transform: hovered ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.4s ease' }} />
                 ) : (
                     <div style={{ width: 80, height: 80, borderRadius: '50%', background: `linear-gradient(135deg,${color}22,${color}44)`, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: hovered ? 'scale(1.08) rotate(5deg)' : 'scale(1)', transition: 'transform 0.4s ease', boxShadow: `0 8px 24px ${color}30` }}>
                         <span style={{ fontSize: 32, fontWeight: 900, color: color }}>{m.name?.charAt(0)}</span>

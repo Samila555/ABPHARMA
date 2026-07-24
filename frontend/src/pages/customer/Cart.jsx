@@ -49,7 +49,7 @@ export default function Cart() {
                             {items.map(item => (
                                 <div key={item.id} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 items-center">
                                     <div className="w-20 h-20 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                        {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-2 mix-blend-multiply" /> :
+                                        {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-2" /> :
                                             <div className="text-sky-600 font-bold text-2xl">{item.name.charAt(0)}</div>}
                                     </div>
 

@@ -83,7 +83,7 @@ function MedicineCard({ m, index }) {
                     )}
                     {m.image ? (
                         <img src={m.image} alt={m.name}
-                            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
+                            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
                         />
                     ) : (
                         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white font-bold text-3xl shadow-lg group-hover:scale-110 transition-transform">

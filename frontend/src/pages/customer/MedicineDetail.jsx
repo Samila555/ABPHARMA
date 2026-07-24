@@ -51,7 +51,7 @@ export default function MedicineDetail() {
                         <div className="lg:col-span-2 bg-slate-50/50 p-10 flex items-center justify-center relative border-r border-slate-100">
                             <div className="w-full aspect-square relative flex items-center justify-center">
                                 {medicine.image ? (
-                                    <img src={medicine.image} alt={medicine.name} className="w-full h-full object-contain mix-blend-multiply drop-shadow-xl" />
+                                    <img src={medicine.image} alt={medicine.name} className="w-full h-full object-contain drop-shadow-xl" />
                                 ) : (
                                     <div className="w-48 h-48 bg-white rounded-full flex items-center justify-center shadow-lg border-8 border-sky-50 text-sky-600 font-bold text-7xl">
                                         {medicine.name.charAt(0)}
