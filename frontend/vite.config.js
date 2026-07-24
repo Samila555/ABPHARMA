@@ -10,12 +10,20 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['framer-motion', 'react-hot-toast', 'react-icons'],
-          'vendor-charts': ['chart.js', 'react-chartjs-2'],
-          'vendor-forms': ['react-hook-form', 'axios'],
-          'vendor-utils': ['date-fns', 'zustand', 'jspdf', 'jspdf-autotable'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react-router-dom') || id.includes('react-dom') || id.includes('/react/'))
+              return 'vendor-react';
+            if (id.includes('framer-motion') || id.includes('react-hot-toast') || id.includes('react-icons'))
+              return 'vendor-ui';
+            if (id.includes('chart.js') || id.includes('react-chartjs-2'))
+              return 'vendor-charts';
+            if (id.includes('react-hook-form') || id.includes('axios'))
+              return 'vendor-forms';
+            if (id.includes('date-fns') || id.includes('zustand') || id.includes('jspdf'))
+              return 'vendor-utils';
+            return 'vendor';
+          }
         },
       },
     },
