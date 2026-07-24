@@ -60,7 +60,7 @@ export default function MedicineForm() {
         pregnancy_category: 'N', breastfeeding_info: '', adult_dosage: '', child_dosage: '',
         overdose_info: '', missed_dose_info: '', strength: '', dosage_form: 'Tablet', unit: 'Tablet',
         purchase_price: '', selling_price: '', quantity: '0', min_stock_level: '10',
-        batch_number: '', expiry_date: '', requires_prescription: false, is_featured: true, status: 'available'
+        batch_number: '', expiry_date: '', requires_prescription: false, is_featured: false, status: 'available'
     });
 
     useEffect(() => {
@@ -344,7 +344,7 @@ export default function MedicineForm() {
                                 <div className="relative">
                                     <img src={imagePreview} alt="Preview" className="w-full h-36 object-contain rounded-lg" />
                                     <button type="button" onClick={() => { setImagePreview(null); set('_imageFile', null); }}
-                                        className="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">ETB </button>
+                                        className="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">X</button>
                                 </div>
                             ) : (
                                 <div className="py-4">
