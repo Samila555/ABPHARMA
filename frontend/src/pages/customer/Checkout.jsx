@@ -9,12 +9,11 @@ export default function Checkout() {
     const { items, getCartTotal, clearCart } = useCartStore();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', city: '', delivery_type: 'delivery', payment_method: 'transfer', rxFile: null });
+    const [form, setForm] = useState({ name: '', phone: '', email: '', payment_method: 'transfer', rxFile: null });
     const [rxPreview, setRxPreview] = useState(null);
 
     const total = getCartTotal();
-    const deliveryFee = form.delivery_type === 'delivery' ? 1500 : 0;
-    const finalTotal = total + deliveryFee;
+    const finalTotal = total;
     const requiresRx = items.some(i => i.requires_prescription);
 
     if (items.length === 0) {
@@ -39,8 +38,8 @@ export default function Checkout() {
             // 1. Create order
             const orderPayload = {
                 customer_name: form.name, customer_phone: form.phone, customer_email: form.email,
-                shipping_address: form.delivery_type === 'delivery' ? `${form.address}, ${form.city}` : '',
-                order_type: 'online', delivery_type: form.delivery_type, payment_method: form.payment_method,
+                shipping_address: '',
+                order_type: 'online', delivery_type: 'pickup', payment_method: form.payment_method,
                 status: 'pending', payment_status: 'pending', items
             };
 
@@ -85,33 +84,12 @@ export default function Checkout() {
                             </div>
                         </div>
 
-                        {/* Delivery Method */}
-                        <div className="card p-6 lg:p-8">
-                            <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">2. Delivery Method</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                                {[{ id: 'delivery', title: 'Home Delivery', desc: 'Delivered to your address', p: '+ETB 1,500' }, { id: 'pickup', title: 'Store Pickup', desc: 'Pick up from pharmacy', p: 'Free' }].map(m => (
-                                    <div key={m.id} onClick={() => setForm(f => ({ ...f, delivery_type: m.id }))} className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${form.delivery_type === m.id ? 'border-sky-500 bg-sky-50' : 'border-slate-200 hover:border-sky-200'}`}>
-                                        <div className="flex justify-between items-start mb-1">
-                                            <div className="font-bold text-slate-800">{m.title}</div>
-                                            {form.delivery_type === m.id && <FiCheckCircle className="text-sky-500 text-lg" />}
-                                        </div>
-                                        <div className="text-sm text-slate-500 mb-2">{m.desc}</div>
-                                        <div className="font-semibold text-sky-700">{m.p}</div>
-                                    </div>
-                                ))}
-                            </div>
-                            {form.delivery_type === 'delivery' && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in">
-                                    <div className="md:col-span-2"><label className="form-label">Delivery Address *</label><input type="text" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="form-input" required /></div>
-                                    <div><label className="form-label">City/Area *</label><input type="text" value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} className="form-input" required /></div>
-                                </div>
-                            )}
-                        </div>
+
 
                         {/* Prescription Upload */}
                         {requiresRx && (
                             <div className="card p-6 lg:p-8 border-2 border-amber-200 bg-amber-50/30">
-                                <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><FiShield className="text-amber-500" /> 3. Prescription Upload</h2>
+                                <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><FiShield className="text-amber-500" /> 2. Prescription Upload</h2>
                                 <p className="text-sm text-slate-600 mb-6">Your order contains prescription-only items. Please upload a clear photo of your valid medical prescription.</p>
                                 <div className="border-2 border-dashed border-sky-300 bg-white rounded-xl p-6 text-center hover:border-sky-500 transition-colors cursor-pointer relative">
                                     <input type="file" accept="image/*" onChange={handleRxChange} required className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
@@ -126,9 +104,9 @@ export default function Checkout() {
 
                         {/* Payment Method */}
                         <div className="card p-6 lg:p-8">
-                            <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">4. Payment Method</h2>
+                            <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">3. Payment Method</h2>
                             <div className="space-y-3">
-                                {[{ id: 'transfer', l: 'Bank Transfer' }, { id: 'card', l: 'Credit / Debit Card' }, { id: 'cash', l: 'Cash / POS on Delivery' }].map(m => (
+                                {[{ id: 'transfer', l: 'Bank Transfer' }, { id: 'card', l: 'Credit / Debit Card' }, { id: 'cash', l: 'Cash / POS on Pickup' }].map(m => (
                                     <label key={m.id} className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-colors ${form.payment_method === m.id ? 'border-sky-500 bg-sky-50' : 'border-slate-200'}`}>
                                         <input type="radio" checked={form.payment_method === m.id} onChange={() => setForm(f => ({ ...f, payment_method: m.id }))} className="w-5 h-5 text-sky-600 focus:ring-sky-500" />
                                         <span className="font-medium text-slate-700">{m.l}</span>
@@ -153,7 +131,6 @@ export default function Checkout() {
 
                             <div className="border-t border-slate-700 pt-6 space-y-3 mb-6">
                                 <div className="flex justify-between text-slate-300"><span>Subtotal</span><span>{fmt(total)}</span></div>
-                                <div className="flex justify-between text-slate-300"><span>Delivery Fee</span><span>{fmt(deliveryFee)}</span></div>
                             </div>
 
                             <div className="flex justify-between text-2xl font-bold mb-8">

@@ -171,9 +171,9 @@ export default function Home() {
 
     const SERVICES = [
         { icon: FiShield, title: '100% Genuine', desc: 'All medicines sourced from certified, authorized distributors with verified supply chains.', color: '#0ea5e9', bg: '#e0f2fe' },
-        { icon: FiTruck, title: 'Fast Delivery', desc: 'Same-day delivery within city limits. Track your order live from our pharmacy to your door.', color: '#059669', bg: '#dcfce7' },
-        { icon: FiClock, title: '24/7 Support', desc: 'Our pharmacists are always available ETB  call, chat, or email anytime for expert medical advice.', color: '#7c3aed', bg: '#ede9fe' },
+        { icon: FiClock, title: '24/7 Support', desc: 'Our pharmacists are always available — call, chat, or email anytime for expert medical advice.', color: '#7c3aed', bg: '#ede9fe' },
         { icon: FiHeart, title: 'Health Records', desc: 'Securely store your prescriptions, order history, and health records in one trusted place.', color: '#ea580c', bg: '#ffedd5' },
+        { icon: FiActivity, title: 'Expert Consultation', desc: 'Get professional pharmacist advice on medication dosage, interactions, and general health care.', color: '#059669', bg: '#dcfce7' },
     ];
 
     const WHY_US = [
@@ -182,7 +182,7 @@ export default function Home() {
         'Affordable Healthcare Solutions',
         'Real-time Inventory Updates',
         'Secure Payment Processing',
-        'Free Delivery on Orders Over ETB 5,000',
+        'Expert Pharmacist Consultations',
     ];
 
     return (
@@ -609,7 +609,7 @@ export default function Home() {
                         {[
                             { step: '01', icon: FiSearch, title: 'Search Medicine', desc: 'Browse our catalog or search by name, brand, or generic name.', color: '#0ea5e9', bg: '#e0f2fe' },
                             { step: '02', icon: FiShoppingCart, title: 'Add to Cart', desc: 'Select quantity, check stock availability, and add to your cart.', color: '#059669', bg: '#dcfce7' },
-                            { step: '03', icon: FiTruck, title: 'Fast Delivery', desc: 'Complete payment and get same-day delivery to your location.', color: '#7c3aed', bg: '#ede9fe' },
+                            { step: '03', icon: FiHeart, title: 'Pickup & Stay Healthy', desc: 'Complete payment and pick up your order from our pharmacy. Track and reorder with ease.', color: '#7c3aed', bg: '#ede9fe' },
                             { step: '04', icon: FiHeart, title: 'Stay Healthy', desc: 'Track your order, reorder easily, and manage your health records.', color: '#ea580c', bg: '#ffedd5' },
                         ].map((s, i) => (
                             <motion.div key={i}

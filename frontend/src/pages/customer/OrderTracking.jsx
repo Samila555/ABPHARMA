@@ -34,8 +34,8 @@ export default function OrderTracking() {
         { id: 'pending', label: 'Order Placed', icon: FiCheckCircle },
         { id: 'confirmed', label: 'Confirmed', icon: FiCheckCircle },
         { id: 'processing', label: 'Processing', icon: FiPackage },
-        { id: 'ready', label: order?.delivery_type === 'pickup' ? 'Ready for Pickup' : 'Out for Delivery', icon: order?.delivery_type === 'pickup' ? FiHome : FiTruck },
-        { id: 'completed', label: order?.delivery_type === 'pickup' ? 'Picked Up' : 'Delivered', icon: FiCheckCircle }
+        { id: 'ready', label: 'Ready for Pickup', icon: FiHome },
+        { id: 'completed', label: 'Picked Up', icon: FiCheckCircle }
     ];
 
     const getStepIndex = (status) => steps.findIndex(s => s.id === status);
@@ -105,12 +105,10 @@ export default function OrderTracking() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="card p-6">
-                                <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-3">Delivery Information</h3>
+                                <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-3">Pickup Information</h3>
                                 <div className="space-y-3 text-sm">
                                     <div><span className="text-slate-500 block">Name</span><span className="font-semibold text-slate-800">{order.customer_name}</span></div>
                                     <div><span className="text-slate-500 block">Phone</span><span className="font-semibold text-slate-800">{order.customer_phone}</span></div>
-                                    <div><span className="text-slate-500 block text-capitalize">Delivery Method</span><span className="badge badge-secondary">{order.delivery_type}</span></div>
-                                    {order.delivery_type === 'delivery' && <div><span className="text-slate-500 block">Address</span><span className="font-semibold text-slate-800">{order.shipping_address}</span></div>}
                                 </div>
                             </div>
 
