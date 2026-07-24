@@ -16,102 +16,211 @@
   --sidebar-w: 260px;
 }
 
-/* ===== DARK MODE ===== */
+/* ===== PREMIUM DARK MODE (#1a1a1a base, #2d2d2d surfaces) ===== */
 html.dark {
   color-scheme: dark;
 }
 
+/* Base body */
 html.dark body {
-  background: #0f1117 !important;
-  color: #e2e8f0 !important;
+  background: #1a1a1a !important;
+  color: #f0f0f0 !important;
 }
 
+/* Header / Navbar */
 html.dark header,
 html.dark .customer-nav {
-  background: #1a1d27 !important;
-  border-color: rgba(255, 255, 255, 0.06) !important;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4) !important;
+  background: #1a1a1a !important;
+  border-color: #2d2d2d !important;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.6) !important;
 }
 
-html.dark nav a {
-  color: #94a3b8 !important;
+/* White & light backgrounds */
+html.dark .bg-white {
+  background: #2d2d2d !important;
 }
 
-html.dark nav a:hover,
-html.dark nav a.active-link {
-  color: #38bdf8 !important;
-}
-
-html.dark .bg-white,
 html.dark .bg-slate-50,
-html.dark .bg-gray-50 {
-  background: #1a1d27 !important;
+html.dark .bg-gray-50,
+html.dark .bg-sky-50,
+html.dark .bg-indigo-50,
+html.dark .bg-blue-50,
+html.dark .bg-emerald-50 {
+  background: #1a1a1a !important;
+}
+
+html.dark .bg-gray-100,
+html.dark .bg-slate-100 {
+  background: #2d2d2d !important;
 }
 
 html.dark .bg-white\/70,
-html.dark .bg-white\/80 {
-  background: rgba(26, 29, 39, 0.85) !important;
+html.dark .bg-white\/80,
+html.dark .bg-white\/60,
+html.dark .bg-white\/90 {
+  background: rgba(26, 26, 26, 0.92) !important;
 }
 
+html.dark .bg-gray-50\/70 {
+  background: rgba(45, 45, 45, 0.85) !important;
+  border-color: #3a3a3a !important;
+}
+
+/* Text */
+html.dark .text-slate-900,
 html.dark .text-slate-800,
+html.dark .text-gray-900,
+html.dark .text-gray-800 {
+  color: #ffffff !important;
+}
+
 html.dark .text-slate-700,
-html.dark .text-gray-800,
 html.dark .text-gray-700 {
-  color: #e2e8f0 !important;
+  color: #e0e0e0 !important;
 }
 
 html.dark .text-slate-600,
-html.dark .text-gray-600,
-html.dark .text-slate-500,
-html.dark .text-gray-500 {
-  color: #94a3b8 !important;
+html.dark .text-gray-600 {
+  color: #b0b0b0 !important;
 }
 
+html.dark .text-slate-500,
+html.dark .text-gray-500,
+html.dark .text-slate-400,
+html.dark .text-gray-400 {
+  color: #707070 !important;
+}
+
+/* Borders */
 html.dark .border-slate-100,
 html.dark .border-slate-200,
 html.dark .border-gray-100,
-html.dark .border-gray-200 {
-  border-color: rgba(255, 255, 255, 0.07) !important;
+html.dark .border-gray-200,
+html.dark .border-white,
+html.dark .border-white\/80 {
+  border-color: #2d2d2d !important;
 }
 
-html.dark .shadow-sm,
-html.dark .shadow-md,
-html.dark .shadow-lg {
-  --tw-shadow-color: rgba(0, 0, 0, 0.5);
+/* Cards */
+html.dark .card,
+html.dark .medicine-card,
+html.dark .stat-card {
+  background: #2d2d2d !important;
+  border-color: #3a3a3a !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5) !important;
 }
 
+html.dark .medicine-card:hover {
+  border-color: #555 !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Inputs */
 html.dark input,
 html.dark textarea,
 html.dark select {
-  background: #252836 !important;
-  color: #e2e8f0 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: #2d2d2d !important;
+  color: #f0f0f0 !important;
+  border-color: #3a3a3a !important;
 }
 
-html.dark .medicine-card,
-html.dark .card {
-  background: #1e2130 !important;
-  border-color: rgba(255, 255, 255, 0.06) !important;
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #555 !important;
 }
 
+html.dark input:focus,
+html.dark textarea:focus {
+  border-color: #555 !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Gradient sections — darken via brightness */
+html.dark .bg-gradient-to-br:not([class*="from-\[#0088cc\]"]):not([class*="from-sky"]) {
+  filter: brightness(0.7) !important;
+}
+
+/* Modals */
+html.dark .modal-box {
+  background: #2d2d2d !important;
+  border: 1px solid #3a3a3a !important;
+}
+
+html.dark .modal-overlay {
+  background: rgba(0, 0, 0, 0.85) !important;
+}
+
+/* Tables */
+html.dark .data-table th {
+  background: #2d2d2d !important;
+  color: #888 !important;
+  border-color: #3a3a3a !important;
+}
+
+html.dark .data-table td {
+  color: #e0e0e0 !important;
+  border-color: #2a2a2a !important;
+}
+
+html.dark .data-table tr:hover td {
+  background: #333 !important;
+}
+
+/* Topbar (admin) */
+html.dark .topbar {
+  background: #1a1a1a !important;
+  border-color: #2d2d2d !important;
+}
+
+/* Footer */
 html.dark footer {
-  background: #0a0d14 !important;
+  background: #111111 !important;
+  border-top: 1px solid #2d2d2d !important;
 }
 
-/* Smooth theme transition */
-body,
-header,
-nav,
-footer,
-div,
-section,
-main,
-aside,
-input,
-textarea,
-button {
-  transition: background 0.3s ease, color 0.2s ease, border-color 0.2s ease !important;
+/* Badges */
+html.dark .badge-success {
+  background: rgba(22, 163, 74, 0.2) !important;
+  color: #4ade80 !important;
 }
+
+html.dark .badge-warning {
+  background: rgba(217, 119, 6, 0.2) !important;
+  color: #fbbf24 !important;
+}
+
+html.dark .badge-danger {
+  background: rgba(220, 38, 38, 0.2) !important;
+  color: #f87171 !important;
+}
+
+html.dark .badge-info {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #93c5fd !important;
+}
+
+/* Scrollbar */
+html.dark ::-webkit-scrollbar-track {
+  background: #1a1a1a !important;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #3a3a3a !important;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #555 !important;
+}
+
+/* ===== SMOOTH TRANSITION (all elements) ===== */
+*,
+*::before,
+*::after {
+  transition-property: background-color, color, border-color, box-shadow, filter !important;
+  transition-duration: 0.3s !important;
+  transition-timing-function: ease !important;
+}
+
 
 
 * {
