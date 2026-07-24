@@ -245,9 +245,9 @@ export default function Contact() {
                                 <h3 className="text-2xl font-extrabold mb-10">Contact Information</h3>
                                 <div className="space-y-10">
                                     {[
-                                        { Icon: FiMapPin, title: 'Our Location', text: '123 Health Avenue,\nMedical District, City Center' },
-                                        { Icon: FiPhone, title: 'Phone Number', text: '+234 800 000 0000\nSupport: 24/7', highlight: true },
-                                        { Icon: FiMail, title: 'Email Address', text: 'support@abpharma.com\ninfo@abpharma.com' },
+                                        { Icon: FiMapPin, title: 'Our Location', text: 'Addis Abeba' },
+                                        { Icon: FiPhone, title: 'Phone Number', text: '0901243826\nSupport: 24/7', highlight: true },
+                                        { Icon: FiMail, title: 'Email Address', text: 'abelzerfuone@gmail.com' },
                                     ].map((item, i) => (
                                         <motion.div
                                             key={i}
@@ -266,7 +266,7 @@ export default function Contact() {
                                                 <h4 className="text-lg font-bold mb-1 text-white">{item.title}</h4>
                                                 <p className="text-sky-100/90 leading-relaxed whitespace-pre-line">
                                                     {item.highlight ? (
-                                                        <>{'support@abpharma.com\n'}<span className="text-sky-300 font-semibold">Support: 24/7</span></>
+                                                        <>{'0901243826\n'}<span className="text-sky-300 font-semibold">Support: 24/7</span></>
                                                     ) : item.text}
                                                 </p>
                                             </div>
