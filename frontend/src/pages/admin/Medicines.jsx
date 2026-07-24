@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiFilter, FiDownload, FiAlertTriangle } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiFilter, FiDownload, FiAlertTriangle, FiPackage } from 'react-icons/fi';
 import { MdQrCode } from 'react-icons/md';
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
