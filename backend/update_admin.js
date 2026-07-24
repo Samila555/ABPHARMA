@@ -1,18 +1,12 @@
-const mysql = require('mysql2/promise');
+const { pool } = require('./config/database');
 const bcrypt = require('bcryptjs');
-require('dotenv').config();
 
 async function updateAdmin() {
     try {
-        const connection = await mysql.createConnection({
-            host: process.env.DB_HOST || '127.0.0.1',
-            user: process.env.DB_USER || 'root',
-            password: process.env.DB_PASSWORD || '',
-            database: process.env.DB_NAME || 'abpharma_db'
-        });
+        const connection = await pool.getConnection();
 
-        const newEmail = 'director@abpharma.com';
-        const newPassword = 'SecureAdmin77!';
+        const newEmail = 'abel@gmail.com';
+        const newPassword = 'abel123@';
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
@@ -22,7 +16,7 @@ async function updateAdmin() {
         // Insert new admin
         await connection.execute(
             'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
-            ['AB Pharma Director', newEmail, hashedPassword, 'admin']
+            ['Abel', newEmail, hashedPassword, 'admin']
         );
 
         console.log('✅ Admin credentials completely remade.');

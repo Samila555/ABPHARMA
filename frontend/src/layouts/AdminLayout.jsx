@@ -22,7 +22,12 @@ export default function AdminLayout() {
             )}
 
             {/* Sidebar */}
-            <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+            <AdminSidebar
+                isOpen={sidebarOpen}
+                onClose={() => {
+                    if (window.innerWidth < 1024) setSidebarOpen(false);
+                }}
+            />
 
             {/* Main Content */}
             <div

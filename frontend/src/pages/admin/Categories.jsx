@@ -46,7 +46,7 @@ export default function Categories() {
                             categories.map(c => (
                                 <tr key={c.id}>
                                     <td className="font-semibold text-sky-700">{c.name}</td>
-                                    <td className="text-slate-500 text-sm max-w-sm truncate">{c.description || 'ETB '}</td>
+                                    <td className="text-slate-500 text-sm max-w-sm truncate">{c.description || '-'}</td>
                                     <td><span className="badge badge-info">{c.medicine_count || 0}</span></td>
                                     <td><button onClick={() => openEdit(c)} className="p-1.5 text-sky-600 hover:bg-sky-50 rounded-lg"><FiEdit2 size={14} /></button></td>
                                 </tr>

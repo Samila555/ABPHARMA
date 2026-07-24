@@ -130,7 +130,7 @@ export default function Medicines() {
                     <form onSubmit={handleSearch} className="flex gap-2 flex-1 min-w-60">
                         <div className="flex-1 relative">
                             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
-                            <input ref={searchRef} type="text" placeholder="Search by name, brand, generic, barcodeETB "
+                            <input ref={searchRef} type="text" placeholder="Search by name, brand, generic, barcode..."
                                 value={filters.search} onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
                                 className="form-input pl-9 text-sm" />
                         </div>
@@ -245,7 +245,7 @@ export default function Medicines() {
                 {/* Pagination */}
                 {total > filters.limit && (
                     <div className="flex items-center justify-between p-4 border-t border-slate-100">
-                        <div className="text-sm text-slate-500">Showing {(filters.page - 1) * filters.limit + 1}ETB {Math.min(filters.page * filters.limit, total)} of {total}</div>
+                        <div className="text-sm text-slate-500">Showing {(filters.page - 1) * filters.limit + 1} - {Math.min(filters.page * filters.limit, total)} of {total}</div>
                         <div className="flex gap-2">
                             <button onClick={() => setFilters(f => ({ ...f, page: Math.max(1, f.page - 1) }))} disabled={filters.page === 1}
                                 className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40">
