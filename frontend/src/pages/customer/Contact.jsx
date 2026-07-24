@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiMapPin, FiPhone, FiMail, FiSend, FiArrowLeft } from 'react-icons/fi';
-import { FaTelegramPlane } from 'react-icons/fa';
+import { FaTelegram } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
@@ -297,7 +297,7 @@ export default function Contact() {
                                 transition={{ duration: 0.4 }}
                                 className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg"
                             >
-                                <FaTelegramPlane size={32} />
+                                <FaTelegram size={32} />
                             </motion.div>
                             <div className="relative z-10">
                                 <p className="text-xs font-bold uppercase tracking-widest text-blue-100 mb-1">Instant Consultation</p>
