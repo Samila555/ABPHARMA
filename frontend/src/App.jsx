@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useEffect } from 'react';
 import useAuthStore from './store/useAuthStore';
+import useThemeStore from './store/useThemeStore';
 
 // Customer Pages
 import CustomerLayout from './layouts/CustomerLayout';
@@ -54,7 +55,8 @@ const RoleBasedRedirect = () => {
 
 function App() {
   const checkAuth = useAuthStore((s) => s.checkAuth);
-  useEffect(() => { checkAuth(); }, []);
+  const initTheme = useThemeStore((s) => s.initTheme);
+  useEffect(() => { checkAuth(); initTheme(); }, []);
 
   return (
     <BrowserRouter>

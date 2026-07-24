@@ -12,10 +12,13 @@ import {
     FiMenu as Menu,
     FiX as X,
     FiShield,
+    FiSun,
+    FiMoon,
 } from 'react-icons/fi';
 import { MdLocalPharmacy, MdOutlinePointOfSale } from 'react-icons/md';
 import useAuthStore from '../../store/useAuthStore';
 import useCartStore from '../../store/useCartStore';
+import useThemeStore from '../../store/useThemeStore';
 
 const NAV_LINKS = [
     { name: 'Home', path: '/', icon: Home },
@@ -45,6 +48,7 @@ export default function CustomerNavbar() {
     const { isAuthenticated, user } = useAuthStore();
     const cartCount = useCartStore((s) => s.getCartCount());
     const location = useLocation();
+    const { isDark, toggleTheme } = useThemeStore();
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 10);
@@ -200,6 +204,59 @@ export default function CustomerNavbar() {
                             </button>
                             <Badge count={cartCount > 0 ? cartCount : 1} />
                         </div>
+
+                        {/* Day / Night Toggle */}
+                        <button
+                            onClick={toggleTheme}
+                            aria-label={isDark ? 'Switch to Day mode' : 'Switch to Night mode'}
+                            title={isDark ? 'Day Mode' : 'Night Mode'}
+                            className="relative w-16 h-8 rounded-full flex items-center transition-all duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 overflow-hidden flex-shrink-0"
+                            style={{
+                                background: isDark
+                                    ? 'linear-gradient(135deg, #1a1d3a, #0f0c29)'
+                                    : 'linear-gradient(135deg, #74c0fc, #228be6)',
+                                boxShadow: isDark
+                                    ? '0 0 12px rgba(99,102,241,0.4)'
+                                    : '0 0 12px rgba(34,139,230,0.35)',
+                            }}
+                        >
+                            {/* Stars (dark mode) */}
+                            {isDark && (
+                                <>
+                                    <span style={{ position: 'absolute', top: 4, left: 6, width: 2, height: 2, borderRadius: '50%', background: 'white', opacity: 0.8 }} />
+                                    <span style={{ position: 'absolute', top: 10, left: 14, width: 1.5, height: 1.5, borderRadius: '50%', background: 'white', opacity: 0.6 }} />
+                                    <span style={{ position: 'absolute', bottom: 5, left: 8, width: 1, height: 1, borderRadius: '50%', background: 'white', opacity: 0.7 }} />
+                                </>
+                            )}
+                            {/* Sun rays (light mode) */}
+                            {!isDark && (
+                                <span style={{ position: 'absolute', left: 6, width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', filter: 'blur(4px)' }} />
+                            )}
+                            {/* Thumb */}
+                            <span
+                                style={{
+                                    position: 'absolute',
+                                    left: isDark ? 'calc(100% - 26px)' : '4px',
+                                    width: 22,
+                                    height: 22,
+                                    borderRadius: '50%',
+                                    background: isDark
+                                        ? 'linear-gradient(135deg, #c7d2fe, #818cf8)'
+                                        : 'linear-gradient(135deg, #fff176, #ffca28)',
+                                    boxShadow: isDark
+                                        ? '0 0 8px rgba(129,140,248,0.8)'
+                                        : '0 0 10px rgba(255,202,40,0.7)',
+                                    transition: 'left 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                {isDark
+                                    ? <FiMoon size={11} style={{ color: '#312e81' }} />
+                                    : <FiSun size={12} style={{ color: '#b45309' }} />}
+                            </span>
+                        </button>
 
                         {/* Divider */}
                         <div className="hidden sm:block w-px h-7 bg-gray-200 mx-0.5" aria-hidden="true" />

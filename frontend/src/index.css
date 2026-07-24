@@ -16,6 +16,104 @@
   --sidebar-w: 260px;
 }
 
+/* ===== DARK MODE ===== */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background: #0f1117 !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark header,
+html.dark .customer-nav {
+  background: #1a1d27 !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark nav a {
+  color: #94a3b8 !important;
+}
+
+html.dark nav a:hover,
+html.dark nav a.active-link {
+  color: #38bdf8 !important;
+}
+
+html.dark .bg-white,
+html.dark .bg-slate-50,
+html.dark .bg-gray-50 {
+  background: #1a1d27 !important;
+}
+
+html.dark .bg-white\/70,
+html.dark .bg-white\/80 {
+  background: rgba(26, 29, 39, 0.85) !important;
+}
+
+html.dark .text-slate-800,
+html.dark .text-slate-700,
+html.dark .text-gray-800,
+html.dark .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+
+html.dark .text-slate-600,
+html.dark .text-gray-600,
+html.dark .text-slate-500,
+html.dark .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-gray-100,
+html.dark .border-gray-200 {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+html.dark .shadow-sm,
+html.dark .shadow-md,
+html.dark .shadow-lg {
+  --tw-shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background: #252836 !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .medicine-card,
+html.dark .card {
+  background: #1e2130 !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+html.dark footer {
+  background: #0a0d14 !important;
+}
+
+/* Smooth theme transition */
+body,
+header,
+nav,
+footer,
+div,
+section,
+main,
+aside,
+input,
+textarea,
+button {
+  transition: background 0.3s ease, color 0.2s ease, border-color 0.2s ease !important;
+}
+
+
 * {
   box-sizing: border-box;
   margin: 0;
