@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "git add .. && git commit -m \"Auto-deploy update\" && git push origin main"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.2",
