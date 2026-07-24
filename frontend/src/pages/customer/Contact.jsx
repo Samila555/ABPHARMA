@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiMapPin, FiPhone, FiMail, FiSend, FiArrowLeft } from 'react-icons/fi';
+import { FaTelegramPlane } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
@@ -274,6 +275,36 @@ export default function Contact() {
                                 </div>
                             </div>
                         </motion.div>
+
+                        {/* Telegram Card */}
+                        <motion.a
+                            href="https://t.me/abelzf"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.5 }}
+                            whileHover={{ y: -4, boxShadow: '0 30px 60px rgba(0,136,204,0.35)' }}
+                            className="flex items-center gap-5 bg-gradient-to-r from-[#0088cc] to-[#229ed9] rounded-3xl p-7 text-white shadow-[0_10px_30px_rgba(0,136,204,0.25)] cursor-pointer relative overflow-hidden"
+                        >
+                            <motion.div
+                                animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.2, 0.1] }}
+                                transition={{ duration: 4, repeat: Infinity }}
+                                className="absolute -top-8 -right-8 w-28 h-28 bg-white rounded-full"
+                            />
+                            <motion.div
+                                whileHover={{ rotate: [0, -10, 10, 0] }}
+                                transition={{ duration: 0.4 }}
+                                className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg"
+                            >
+                                <FaTelegramPlane size={32} />
+                            </motion.div>
+                            <div className="relative z-10">
+                                <p className="text-xs font-bold uppercase tracking-widest text-blue-100 mb-1">Instant Consultation</p>
+                                <h3 className="text-xl font-extrabold leading-snug">Ask the Pharmacist</h3>
+                                <p className="text-blue-100 text-sm mt-1">Send us a photo of your prescription or medication. We'll reply instantly!</p>
+                            </div>
+                        </motion.a>
                     </motion.div>
 
                     {/* Contact Form Side */}
