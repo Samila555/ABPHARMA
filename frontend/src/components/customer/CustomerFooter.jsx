@@ -76,9 +76,9 @@ const CATEGORIES = [
 ];
 
 const CONTACTS = [
-    { Icon: FiMapPin, text: '123 Health Avenue, Medical District, City, Country' },
-    { Icon: FiPhone, text: '+234 800 000 0000' },
-    { Icon: FiMail, text: 'support@abpharma.com' },
+    { Icon: FiMapPin, text: 'Addis Abeba' },
+    { Icon: FiPhone, text: '0901243826' },
+    { Icon: FiMail, text: 'abelzerfuone@gmail.com' },
 ];
 
 export default function CustomerFooter() {
