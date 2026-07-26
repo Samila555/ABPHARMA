@@ -146,7 +146,7 @@ export default function OrderTracking() {
                                             const formData = new FormData();
                                             formData.append('screenshot', file);
                                             try {
-                                                const res = await api.post(`/orders/${order.id}/payment-proof`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                                                const res = await api.post(`/orders/${order.id}/payment-proof`, formData);
                                                 toast.success('Payment proof uploaded successfully!');
                                                 fetchOrder(order.order_number); // Refresh
                                             } catch (err) {

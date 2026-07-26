@@ -98,10 +98,10 @@ export default function MedicineForm() {
                 else if (v !== null && v !== undefined) formData.append(k, v);
             });
             if (isEdit) {
-                await api.put(`/medicines/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                await api.put(`/medicines/${id}`, formData);
                 toast.success('Medicine updated!');
             } else {
-                await api.post('/medicines', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                await api.post('/medicines', formData);
                 toast.success('Medicine added successfully!');
             }
             navigate('/admin/medicines');

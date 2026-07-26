@@ -34,6 +34,12 @@ connectDB();
 // Security Middleware
 app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            'img-src': ["'self'", 'data:', 'https:', 'blob:'],
+        },
+    },
 }));
 
 // Rate Limiting

@@ -53,7 +53,7 @@ export default function Checkout() {
                 formData.append('doctor_name', 'Online Upload');
                 formData.append('image', form.rxFile);
                 formData.append('notes', `Attached to order ${orderNumber}`);
-                await api.post('/prescriptions', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                await api.post('/prescriptions', formData);
             }
 
             toast.success('Order placed successfully!');
