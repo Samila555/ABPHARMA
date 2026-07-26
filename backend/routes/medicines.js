@@ -100,7 +100,7 @@ router.post('/', authenticate, authorize('admin', 'pharmacist'), upload('medicin
             unit, purchase_price, selling_price, quantity, min_stock_level, batch_number,
             expiry_date, requires_prescription, is_featured, status
         } = req.body;
-        const image = req.file ? (req.file.path || `/uploads/medicines/${req.file.filename}`) : null;
+        const image = req.file ? req.file.path : null;
         console.log('📸 POST /medicines:', { hasFile: !!req.file, image: image ? image.substring(0, 100) : null });
         // Convert empty barcode to null to avoid UNIQUE constraint violations
         const barcodeVal = barcode && barcode.trim() ? barcode.trim() : null;
@@ -146,8 +146,7 @@ router.put('/:id', authenticate, authorize('admin', 'pharmacist'), upload('medic
         const [existing] = await pool.execute('SELECT * FROM medicines WHERE id = ?', [id]);
         if (!existing.length) return res.status(404).json({ success: false, message: 'Medicine not found.' });
         const fields = req.body;
-        // Cloudinary gives req.file.path (full https:// URL); local disk gives req.file.filename
-        const image = req.file ? (req.file.path || `/uploads/medicines/${req.file.filename}`) : existing[0].image;
+        const image = req.file ? req.file.path : existing[0].image;
         // Convert empty barcode to null to avoid UNIQUE constraint violations
         const barcodeVal = fields.barcode && fields.barcode.trim() ? fields.barcode.trim() : null;
         await pool.execute(`

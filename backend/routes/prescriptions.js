@@ -23,7 +23,7 @@ router.get('/', authenticate, async (req, res) => {
 router.post('/', authenticate, upload('prescriptions').single('image'), async (req, res) => {
     try {
         const { customer_id, doctor_name, doctor_phone, hospital, prescription_date, notes } = req.body;
-        const image = req.file ? (req.file.path || `/uploads/prescriptions/${req.file.filename}`) : null;
+        const image = req.file ? req.file.path : null;
         const [result] = await pool.execute(
             'INSERT INTO prescriptions (customer_id, doctor_name, doctor_phone, hospital, prescription_date, image, notes) VALUES (?,?,?,?,?,?,?)',
             [customer_id || null, doctor_name, doctor_phone, hospital, prescription_date || null, image, notes]

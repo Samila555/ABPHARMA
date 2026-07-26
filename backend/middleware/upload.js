@@ -5,10 +5,9 @@ const fs = require('fs');
 /**
  * Smart upload middleware:
  *  - If CLOUDINARY env vars are set → buffer in memory, upload to Cloudinary via SDK
- *  - Otherwise → save to local disk (development)
+ *  - Otherwise → save to local disk
  *
- * Uses memoryStorage + direct Cloudinary SDK call to avoid compatibility
- * issues between multer-storage-cloudinary and multer v2.
+ * Always normalizes req.file.path to be a web-accessible URL path.
  */
 
 let cloudinaryConfigured = false;
@@ -34,9 +33,36 @@ const fileFilter = (req, file, cb) => {
     cb(new Error('Only image files are allowed!'));
 };
 
+/**
+ * Wraps a multer instance so that after processing:
+ * - If Cloudinary was used: req.file.path = https:// Cloudinary URL (set by SDK upload)
+ * - If disk storage was used: req.file.path = /uploads/<folder>/<filename> (web URL, NOT filesystem path)
+ */
+function wrapMulter(multerInstance, folder) {
+    const originalSingle = multerInstance.single.bind(multerInstance);
+    multerInstance.single = (fieldName) => {
+        const multerMiddleware = originalSingle(fieldName);
+        return (req, res, next) => {
+            multerMiddleware(req, res, (err) => {
+                if (err) return next(err);
+                if (!req.file) return next();
+
+                // For disk storage: multer sets req.file.path to the full filesystem path.
+                // We need to replace it with the web-accessible URL path.
+                if (!cloudinaryConfigured && req.file.path && !req.file.path.startsWith('http')) {
+                    req.file.path = `/uploads/${folder}/${req.file.filename}`;
+                    console.log('📁 Disk upload:', req.file.path);
+                }
+
+                next();
+            });
+        };
+    };
+    return multerInstance;
+}
+
 const upload = (folder = 'general') => {
     if (cloudinaryConfigured) {
-        // Use memoryStorage — buffer is uploaded to Cloudinary via SDK in the route handler
         const storage = multer.memoryStorage();
         const multerInstance = multer({
             storage,
@@ -44,7 +70,7 @@ const upload = (folder = 'general') => {
             limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 },
         });
 
-        // Wrap multer to upload the buffered file to Cloudinary after multer processes it
+        // Override .single() to upload buffer to Cloudinary after multer processes it
         const originalSingle = multerInstance.single.bind(multerInstance);
         multerInstance.single = (fieldName) => {
             const multerMiddleware = originalSingle(fieldName);
@@ -62,10 +88,9 @@ const upload = (folder = 'general') => {
                             allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
                             transformation: [{ quality: 'auto', fetch_format: 'auto' }],
                         });
-                        // Attach Cloudinary info in the format routes expect
                         req.file.path = result.secure_url;
                         req.file.filename = result.public_id;
-                        req.file.cloudinary = result;
+                        console.log('☁️  Cloudinary upload:', req.file.path.substring(0, 80));
                         next();
                     } catch (uploadErr) {
                         console.error('Cloudinary upload failed:', uploadErr.message);
@@ -78,7 +103,7 @@ const upload = (folder = 'general') => {
         return multerInstance;
     }
 
-    // Local disk storage (development)
+    // Local disk storage
     const storage = multer.diskStorage({
         destination: (req, file, cb) => {
             const dir = path.join(__dirname, '..', 'uploads', folder);
@@ -90,7 +115,9 @@ const upload = (folder = 'general') => {
             cb(null, unique + path.extname(file.originalname));
         },
     });
-    return multer({ storage, fileFilter, limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 } });
+    const multerInstance = multer({ storage, fileFilter, limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 } });
+
+    return wrapMulter(multerInstance, folder);
 };
 
 module.exports = upload;

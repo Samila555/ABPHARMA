@@ -145,7 +145,7 @@ router.patch('/:id/status', authenticate, async (req, res) => {
 router.post('/:id/payment-proof', authenticate, upload('payments').single('screenshot'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No screenshot uploaded.' });
-        const screenshotPath = req.file.path || `/uploads/payments/${req.file.filename}`;
+        const screenshotPath = req.file.path;
         await pool.execute('UPDATE orders SET payment_screenshot = ? WHERE id = ?', [screenshotPath, req.params.id]);
         res.json({ success: true, message: 'Payment screenshot uploaded successfully.', screenshot: screenshotPath });
     } catch (error) {
