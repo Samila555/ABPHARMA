@@ -151,4 +151,30 @@ router.get('/expiry-alerts', authenticate, async (req, res) => {
     }
 });
 
+// GET /api/dashboard/expiry-count — lightweight for topbar badge polling
+router.get('/expiry-count', authenticate, async (req, res) => {
+    try {
+        const [expired] = await pool.query(
+            'SELECT COUNT(*) as count FROM medicines WHERE expiry_date < CURDATE() AND is_active = 1'
+        );
+        const [expiring] = await pool.query(
+            'SELECT COUNT(*) as count FROM medicines WHERE expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) AND is_active = 1'
+        );
+        const [lowStock] = await pool.query(
+            'SELECT COUNT(*) as count FROM medicines WHERE quantity <= min_stock_level AND is_active = 1'
+        );
+        res.json({
+            success: true,
+            data: {
+                expired: expired[0].count,
+                expiring: expiring[0].count,
+                lowStock: lowStock[0].count,
+                total: expired[0].count + expiring[0].count,
+            },
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server error.' });
+    }
+});
+
 module.exports = router;
