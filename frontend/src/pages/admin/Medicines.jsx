@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiFilter, FiDownload, FiAlertTriangle, FiPackage } from 'react-icons/fi';
 import { MdQrCode } from 'react-icons/md';
 import api, { getImageUrl } from '../../lib/api';
+import MedicineImage from '../../components/MedicineImage';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 
@@ -183,10 +184,12 @@ export default function Medicines() {
                                         <td>
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-sky-50 rounded-lg overflow-hidden flex-shrink-0">
-                                                    {m.image ? <img src={getImageUrl(m.image)} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
-                                                        : <div className="w-full h-full flex items-center justify-center text-sky-400 text-xs font-bold">
-                                                            {m.name?.charAt(0)}
-                                                        </div>}
+                                                    <MedicineImage
+                                                        src={m.image}
+                                                        name={m.name}
+                                                        className="w-full h-full object-cover"
+                                                        fallbackSize={40}
+                                                    />
                                                 </div>
                                                 <div>
                                                     <div className="font-semibold text-slate-800 text-sm">{m.name}</div>

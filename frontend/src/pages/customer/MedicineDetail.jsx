@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { FiShoppingCart, FiShield, FiAlertCircle, FiCheck, FiMinus, FiPlus, FiArrowLeft, FiInfo, FiTag } from 'react-icons/fi';
 import api from '../../lib/api';
 import { getImageUrl } from '../../lib/api';
+import MedicineImage from '../../components/MedicineImage';
 import useCartStore from '../../store/useCartStore';
 import toast from 'react-hot-toast';
 
@@ -51,16 +52,12 @@ export default function MedicineDetail() {
                         {/* Image Section */}
                         <div className="lg:col-span-2 bg-slate-50/50 p-10 flex items-center justify-center relative border-r border-slate-100">
                             <div className="w-full aspect-square relative flex items-center justify-center">
-                                {medicine.image ? (
-                                    <img src={getImageUrl(medicine.image)} alt={medicine.name}
-                                        className="w-full h-full object-contain drop-shadow-xl"
-                                        onError={e => { e.target.style.display = 'none'; }}
-                                    />
-                                ) : (
-                                    <div className="w-48 h-48 bg-white rounded-full flex items-center justify-center shadow-lg border-8 border-sky-50 text-sky-600 font-bold text-7xl">
-                                        {medicine.name.charAt(0)}
-                                    </div>
-                                )}
+                                <MedicineImage
+                                    src={medicine.image}
+                                    name={medicine.name}
+                                    className="w-full h-full object-contain drop-shadow-xl rounded-2xl"
+                                    fallbackSize={120}
+                                />
                             </div>
                         </div>
 

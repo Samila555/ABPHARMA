@@ -10,7 +10,7 @@ import { MdLocalPharmacy, MdMedication } from 'react-icons/md';
 import useCartStore from '../../store/useCartStore';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { getImageUrl } from '../../lib/api';
+import MedicineImage from '../../components/MedicineImage';
 
 /* ETB ETB ETB  public API (no auth needed) ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB  */
 const pub = axios.create({ baseURL: '/api/public', timeout: 15000 });
@@ -82,15 +82,12 @@ function MedicineCard({ m, index }) {
                     {m.requires_prescription === 1 && (
                         <span className="absolute top-3 right-3 bg-red-100 text-red-600 text-[10px] font-bold px-2 py-1 rounded-full z-10">Rx</span>
                     )}
-                    {m.image ? (
-                        <img src={getImageUrl(m.image)} alt={m.name}
-                            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
-                            onError={e => { e.target.style.display = 'none'; e.target.nextSibling && (e.target.nextSibling.style.display = 'flex'); }}
-                        />
-                    ) : null}
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white font-bold text-3xl shadow-lg group-hover:scale-110 transition-transform" style={{ display: m.image ? 'none' : 'flex' }}>
-                        {m.name?.charAt(0) || 'M'}
-                    </div>
+                    <MedicineImage
+                        src={m.image}
+                        name={m.name}
+                        className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500 rounded-2xl"
+                        fallbackSize={80}
+                    />
                     {/* Quick add btn */}
                     <motion.button
                         onClick={handleAdd}
@@ -515,7 +512,7 @@ export default function Home() {
                         }}>
                             {/* Big logo */}
                             <img src="/logo.png" alt="AB Pharma" style={{ width: '65%', height: '65%', objectFit: 'contain', borderRadius: '50%' }}
-                                onError={e => e.target.style.display = 'none'} />
+                                onError={e => { e.target.style.display = 'none'; }} />
 
                             {/* Floating stat cards */}
                             <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3, repeat: Infinity }}

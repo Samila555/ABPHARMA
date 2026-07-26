@@ -5,7 +5,7 @@ import { MdLocalPharmacy } from 'react-icons/md';
 import axios from 'axios';
 import useCartStore from '../../store/useCartStore';
 import toast from 'react-hot-toast';
-import { getImageUrl } from '../../lib/api';
+import MedicineImage from '../../components/MedicineImage';
 
 const pub = axios.create({ baseURL: '/api/public', timeout: 15000 });
 
@@ -347,15 +347,12 @@ function MedicineCard({ m, catColors, idx, addItem, fmt }) {
                     </span>
                 )}
 
-                {m.image ? (
-                    <img src={getImageUrl(m.image)} alt={m.name} style={{ width: '100%', maxHeight: 120, objectFit: 'contain', transform: hovered ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.4s ease' }}
-                        onError={e => { e.target.style.display = 'none'; }}
-                    />
-                ) : (
-                    <div style={{ width: 80, height: 80, borderRadius: '50%', background: `linear-gradient(135deg,${color}22,${color}44)`, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: hovered ? 'scale(1.08) rotate(5deg)' : 'scale(1)', transition: 'transform 0.4s ease', boxShadow: `0 8px 24px ${color}30` }}>
-                        <span style={{ fontSize: 32, fontWeight: 900, color: color }}>{m.name?.charAt(0)}</span>
-                    </div>
-                )}
+                <MedicineImage
+                    src={m.image}
+                    name={m.name}
+                    style={{ width: '100%', maxHeight: 120, objectFit: 'contain', transform: hovered ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.4s ease', borderRadius: 12 }}
+                    fallbackSize={60}
+                />
 
                 {/* Stock indicator */}
                 <div style={{ position: 'absolute', bottom: 10, right: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
