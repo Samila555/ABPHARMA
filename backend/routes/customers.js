@@ -9,12 +9,13 @@ router.get('/', authenticate, async (req, res) => {
         let query = 'SELECT * FROM customers WHERE is_active = 1';
         const params = [];
         if (search) { query += ' AND (name LIKE ? OR email LIKE ? OR phone LIKE ?)'; params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
-        const [countRows] = await pool.execute(query.replace('SELECT *', 'SELECT COUNT(*) as total'), params);
+        const [countRows] = await pool.query(query.replace('SELECT *', 'SELECT COUNT(*) as total'), params);
         const total = countRows[0].total;
         query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-        params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
-        const [rows] = await pool.execute(query, params);
-        res.json({ success: true, data: rows, total, page: parseInt(page), pages: Math.ceil(total / limit) });
+        const limitNum = parseInt(limit) || 20;
+        const offsetNum = (parseInt(page) - 1) * limitNum;
+        const [rows] = await pool.query(query, [...params, limitNum, offsetNum]);
+        res.json({ success: true, data: rows, total, page: parseInt(page), pages: Math.ceil(total / limitNum) });
     } catch (error) { res.status(500).json({ success: false, message: 'Server error.' }); }
 });
 

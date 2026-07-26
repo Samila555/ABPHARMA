@@ -9,10 +9,11 @@ router.get('/', authenticate, async (req, res) => {
         let query = 'SELECT * FROM notifications WHERE (user_id = ? OR user_id IS NULL)';
         const params = [req.user.id];
         if (is_read !== undefined) { query += ' AND is_read = ?'; params.push(is_read === 'true' ? 1 : 0); }
-        const [countRows] = await pool.execute(query.replace('SELECT *', 'SELECT COUNT(*) as total'), params);
+        const [countRows] = await pool.query(query.replace('SELECT *', 'SELECT COUNT(*) as total'), params);
         query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-        params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
-        const [rows] = await pool.execute(query, params);
+        const limitNum = parseInt(limit) || 20;
+        const offsetNum = (parseInt(page) - 1) * limitNum;
+        const [rows] = await pool.query(query, [...params, limitNum, offsetNum]);
         res.json({ success: true, data: rows, total: countRows[0].total });
     } catch (error) { res.status(500).json({ success: false, message: 'Server error.' }); }
 });

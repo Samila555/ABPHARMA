@@ -5,7 +5,7 @@ const router = express.Router();
 // Public medicine search for customer-facing website
 router.get('/medicines', async (req, res) => {
     try {
-        const { search, category_id, page = 1, limit = 20, featured, sort = 'name' } = req.query;
+        const { search, category_id, page = 1, limit = 20, featured, sort = 'newest', requires_prescription } = req.query;
         let query = `
       SELECT m.id, m.name, m.brand_name, m.generic_name, m.selling_price, m.image, m.status,
         m.quantity, m.description, m.strength, m.dosage_form, m.unit, m.requires_prescription,
@@ -15,21 +15,41 @@ router.get('/medicines', async (req, res) => {
       WHERE m.is_active = 1 AND m.status != 'discontinued'
     `;
         const params = [];
+        const countParams = [];
         if (search) {
-            query += ' AND (m.name LIKE ? OR m.brand_name LIKE ? OR m.generic_name LIKE ? OR m.barcode LIKE ?)';
+            const searchClause = ' AND (m.name LIKE ? OR m.brand_name LIKE ? OR m.generic_name LIKE ? OR m.barcode LIKE ?)';
+            query += searchClause;
             params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+            countParams.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
         }
-        if (category_id) { query += ' AND m.category_id = ?'; params.push(category_id); }
+        if (category_id) {
+            query += ' AND m.category_id = ?';
+            params.push(category_id);
+            countParams.push(category_id);
+        }
         if (featured === 'true') { query += ' AND m.is_featured = 1'; }
-        const countQuery = query.replace(/SELECT m\.id.*c\.name as category_name, m\.category_id/, 'SELECT COUNT(*) as total');
-        const [countRows] = await pool.execute('SELECT COUNT(*) as total FROM medicines m WHERE m.is_active = 1 AND m.status != \'discontinued\'' + (search ? ' AND (m.name LIKE ? OR m.brand_name LIKE ? OR m.generic_name LIKE ? OR m.barcode LIKE ?)' : '') + (category_id ? ' AND m.category_id = ?' : '') + (featured === 'true' ? ' AND m.is_featured = 1' : ''), params);
+        if (requires_prescription === 'true') { query += ' AND m.requires_prescription = 1'; }
+        if (requires_prescription === 'false') { query += ' AND m.requires_prescription = 0'; }
 
+        // Build a clean separate count query using the same conditions
+        let countSql = 'SELECT COUNT(*) as total FROM medicines m WHERE m.is_active = 1 AND m.status != \'discontinued\'';
+        if (search) countSql += ' AND (m.name LIKE ? OR m.brand_name LIKE ? OR m.generic_name LIKE ? OR m.barcode LIKE ?)';
+        if (category_id) countSql += ' AND m.category_id = ?';
+        if (featured === 'true') countSql += ' AND m.is_featured = 1';
+        if (requires_prescription === 'true') countSql += ' AND m.requires_prescription = 1';
+        if (requires_prescription === 'false') countSql += ' AND m.requires_prescription = 0';
+
+        const [countRows] = await pool.query(countSql, countParams);
         const sortMap = { name: 'm.name ASC', price_asc: 'm.selling_price ASC', price_desc: 'm.selling_price DESC', newest: 'm.created_at DESC' };
         query += ` ORDER BY ${sortMap[sort] || 'm.created_at DESC'} LIMIT ? OFFSET ?`;
-        params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
-        const [rows] = await pool.execute(query, params);
-        res.json({ success: true, data: rows, total: countRows[0].total, page: parseInt(page), pages: Math.ceil(countRows[0].total / limit) });
-    } catch (error) { res.status(500).json({ success: false, message: 'Server error.' }); }
+        const limitNum = parseInt(limit) || 20;
+        const offsetNum = (parseInt(page) - 1) * limitNum;
+        const [rows] = await pool.query(query, [...params, limitNum, offsetNum]);
+        res.json({ success: true, data: rows, total: countRows[0].total, page: parseInt(page), pages: Math.ceil(countRows[0].total / limitNum) });
+    } catch (error) {
+        console.error('GET /api/public/medicines error:', error);
+        res.status(500).json({ success: false, message: 'Server error.', error: error.message });
+    }
 });
 
 // Public medicine detail
@@ -63,7 +83,7 @@ router.get('/featured', async (req, res) => {
             ['discontinued']
         );
         res.json({ success: true, data: rows });
-    } catch (error) { res.status(500).json({ success: false, message: 'Server error.' }); }
+    } catch (error) { res.status(500).json({ success: false, message: 'Server error.', error: error.message }); }
 });
 
 // Today's offers
@@ -110,9 +130,13 @@ router.post('/track-scan', async (req, res) => {
 // Public CMS content (hero, about, etc.)
 router.get('/cms', async (req, res) => {
     try {
-        const [rows] = await pool.execute('SELECT section_key, content FROM cms_content ORDER BY section');
+        // 'section' is the actual column name; aliased as section_key for frontend compatibility
+        const [rows] = await pool.execute('SELECT section AS section_key, content FROM cms_content WHERE is_active = 1 ORDER BY id');
         res.json({ success: true, data: rows });
-    } catch (error) { res.status(500).json({ success: false, message: 'Server error.' }); }
+    } catch (error) {
+        console.error('GET /api/public/cms error:', error);
+        res.status(500).json({ success: false, message: 'Server error.', error: error.message });
+    }
 });
 
 module.exports = router;

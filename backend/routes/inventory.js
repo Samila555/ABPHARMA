@@ -13,12 +13,13 @@ router.get('/', authenticate, async (req, res) => {
         if (from_date) { query += ' AND DATE(it.created_at) >= ?'; params.push(from_date); }
         if (to_date) { query += ' AND DATE(it.created_at) <= ?'; params.push(to_date); }
         const countQuery = query.replace('SELECT it.*, m.name as medicine_name', 'SELECT COUNT(*) as total');
-        const [countRows] = await pool.execute(countQuery, params);
+        const [countRows] = await pool.query(countQuery, params);
         const total = countRows[0].total;
         query += ' ORDER BY it.created_at DESC LIMIT ? OFFSET ?';
-        params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
-        const [rows] = await pool.execute(query, params);
-        res.json({ success: true, data: rows, total, page: parseInt(page), pages: Math.ceil(total / limit) });
+        const limitNum = parseInt(limit) || 30;
+        const offsetNum = (parseInt(page) - 1) * limitNum;
+        const [rows] = await pool.query(query, [...params, limitNum, offsetNum]);
+        res.json({ success: true, data: rows, total, page: parseInt(page), pages: Math.ceil(total / limitNum) });
     } catch (error) { res.status(500).json({ success: false, message: 'Server error.' }); }
 });
 

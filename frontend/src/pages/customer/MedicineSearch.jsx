@@ -5,6 +5,7 @@ import { MdLocalPharmacy } from 'react-icons/md';
 import axios from 'axios';
 import useCartStore from '../../store/useCartStore';
 import toast from 'react-hot-toast';
+import { getImageUrl } from '../../lib/api';
 
 const pub = axios.create({ baseURL: '/api/public', timeout: 15000 });
 
@@ -44,7 +45,10 @@ export default function MedicineSearch() {
                 const res = await pub.get(`/medicines?${params}`);
                 setMedicines(res.data.data);
                 setTotal(res.data.total);
-            } catch { toast.error('Failed to load medicines'); }
+            } catch (err) {
+                const msg = err?.response?.data?.message || err?.message || 'Failed to load medicines';
+                toast.error(msg);
+            }
             finally { setLoading(false); }
         };
         fetch();
@@ -344,7 +348,9 @@ function MedicineCard({ m, catColors, idx, addItem, fmt }) {
                 )}
 
                 {m.image ? (
-                    <img src={m.image} alt={m.name} style={{ width: '100%', maxHeight: 120, objectFit: 'contain', transform: hovered ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.4s ease' }} />
+                    <img src={getImageUrl(m.image)} alt={m.name} style={{ width: '100%', maxHeight: 120, objectFit: 'contain', transform: hovered ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.4s ease' }}
+                        onError={e => { e.target.style.display = 'none'; }}
+                    />
                 ) : (
                     <div style={{ width: 80, height: 80, borderRadius: '50%', background: `linear-gradient(135deg,${color}22,${color}44)`, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: hovered ? 'scale(1.08) rotate(5deg)' : 'scale(1)', transition: 'transform 0.4s ease', boxShadow: `0 8px 24px ${color}30` }}>
                         <span style={{ fontSize: 32, fontWeight: 900, color: color }}>{m.name?.charAt(0)}</span>

@@ -27,14 +27,29 @@ router.get('/', async (req, res) => {
             query += ` AND m.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) AND m.expiry_date >= CURDATE()`;
         }
         const countQuery = query.replace('SELECT m.*, c.name as category_name, s.name as supplier_name', 'SELECT COUNT(*) as total');
-        const [countRows] = await pool.execute(countQuery, params);
+        const [countRows] = await pool.query(countQuery, params);
         const total = countRows[0].total;
         query += ` ORDER BY m.created_at DESC LIMIT ? OFFSET ?`;
-        params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
-        const [rows] = await pool.execute(query, params);
-        res.json({ success: true, data: rows, total, page: parseInt(page), limit: parseInt(limit), pages: Math.ceil(total / limit) });
+        const limitNum = parseInt(limit) || 20;
+        const offsetNum = (parseInt(page) - 1) * limitNum;
+        const [rows] = await pool.query(query, [...params, limitNum, offsetNum]);
+        res.json({ success: true, data: rows, total, page: parseInt(page), limit: limitNum, pages: Math.ceil(total / limitNum) });
     } catch (error) {
         console.error(error);
+        res.status(500).json({ success: false, message: 'Server error.' });
+    }
+});
+
+// GET /api/medicines/search/barcode/:barcode (MUST be before /:id)
+router.get('/search/barcode/:barcode', authenticate, async (req, res) => {
+    try {
+        const [rows] = await pool.query(
+            'SELECT * FROM medicines WHERE barcode = ? AND is_active = 1',
+            [req.params.barcode]
+        );
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Medicine not found.' });
+        res.json({ success: true, data: rows[0] });
+    } catch (error) {
         res.status(500).json({ success: false, message: 'Server error.' });
     }
 });
@@ -42,7 +57,7 @@ router.get('/', async (req, res) => {
 // GET /api/medicines/:id
 router.get('/:id', async (req, res) => {
     try {
-        const [rows] = await pool.execute(`
+        const [rows] = await pool.query(`
       SELECT m.*, c.name as category_name, s.name as supplier_name
       FROM medicines m
       LEFT JOIN categories c ON m.category_id = c.id
@@ -66,7 +81,10 @@ router.post('/', authenticate, authorize('admin', 'pharmacist'), upload('medicin
             unit, purchase_price, selling_price, quantity, min_stock_level, batch_number,
             expiry_date, requires_prescription, is_featured, status
         } = req.body;
-        const image = req.file ? `/uploads/medicines/${req.file.filename}` : null;
+        // Cloudinary gives req.file.path (full https:// URL); local disk gives req.file.filename
+        const image = req.file ? (req.file.path || `/uploads/medicines/${req.file.filename}`) : null;
+        // Convert empty barcode to null to avoid UNIQUE constraint violations
+        const barcodeVal = barcode && barcode.trim() ? barcode.trim() : null;
         const [result] = await pool.execute(`
       INSERT INTO medicines (name, brand_name, generic_name, barcode, category_id, supplier_id,
         manufacturer, description, uses, indications, contraindications, warnings, side_effects,
@@ -75,12 +93,14 @@ router.post('/', authenticate, authorize('admin', 'pharmacist'), upload('medicin
         purchase_price, selling_price, quantity, min_stock_level, batch_number, expiry_date,
         image, requires_prescription, is_featured, status, is_active)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)`,
-            [name, brand_name, generic_name, barcode, category_id || null, supplier_id || null,
-                manufacturer, description, uses, indications, contraindications, warnings, side_effects,
-                drug_interactions, storage_conditions, pregnancy_category || 'N', breastfeeding_info,
-                adult_dosage, child_dosage, overdose_info, missed_dose_info, strength, dosage_form,
+            [name, brand_name || null, generic_name || null, barcodeVal, category_id || null, supplier_id || null,
+                manufacturer || null, description || null, uses || null, indications || null, contraindications || null,
+                warnings || null, side_effects || null, drug_interactions || null, storage_conditions || null,
+                pregnancy_category || 'N', breastfeeding_info || null,
+                adult_dosage || null, child_dosage || null, overdose_info || null, missed_dose_info || null,
+                strength || null, dosage_form || 'Tablet',
                 unit || 'Tablet', purchase_price || 0, selling_price || 0, quantity || 0, min_stock_level || 10,
-                batch_number, expiry_date || null, image,
+                batch_number || null, expiry_date || null, image,
                 requires_prescription === 'true' || requires_prescription === true ? 1 : 0,
                 is_featured === 'true' || is_featured === true ? 1 : 0,
                 status || 'available'
@@ -95,8 +115,8 @@ router.post('/', authenticate, authorize('admin', 'pharmacist'), upload('medicin
         }
         res.status(201).json({ success: true, message: 'Medicine added successfully.', id: result.insertId });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Server error.', error: error.message });
+        console.error('POST /medicines error:', error);
+        res.status(500).json({ success: false, message: error.code === 'ER_DUP_ENTRY' ? 'A medicine with this barcode already exists.' : 'Server error.', error: error.message });
     }
 });
 
@@ -107,7 +127,10 @@ router.put('/:id', authenticate, authorize('admin', 'pharmacist'), upload('medic
         const [existing] = await pool.execute('SELECT * FROM medicines WHERE id = ?', [id]);
         if (!existing.length) return res.status(404).json({ success: false, message: 'Medicine not found.' });
         const fields = req.body;
-        const image = req.file ? `/uploads/medicines/${req.file.filename}` : existing[0].image;
+        // Cloudinary gives req.file.path (full https:// URL); local disk gives req.file.filename
+        const image = req.file ? (req.file.path || `/uploads/medicines/${req.file.filename}`) : existing[0].image;
+        // Convert empty barcode to null to avoid UNIQUE constraint violations
+        const barcodeVal = fields.barcode && fields.barcode.trim() ? fields.barcode.trim() : null;
         await pool.execute(`
       UPDATE medicines SET name=?, brand_name=?, generic_name=?, barcode=?, category_id=?,
         supplier_id=?, manufacturer=?, description=?, uses=?, indications=?, contraindications=?,
@@ -116,14 +139,14 @@ router.put('/:id', authenticate, authorize('admin', 'pharmacist'), upload('medic
         strength=?, dosage_form=?, unit=?, purchase_price=?, selling_price=?, min_stock_level=?,
         batch_number=?, expiry_date=?, image=?, requires_prescription=?, is_featured=?, status=?
       WHERE id=?`,
-            [fields.name, fields.brand_name, fields.generic_name, fields.barcode,
-            fields.category_id || null, fields.supplier_id || null, fields.manufacturer,
-            fields.description, fields.uses, fields.indications, fields.contraindications,
-            fields.warnings, fields.side_effects, fields.drug_interactions, fields.storage_conditions,
-            fields.pregnancy_category || 'N', fields.breastfeeding_info, fields.adult_dosage,
-            fields.child_dosage, fields.overdose_info, fields.missed_dose_info, fields.strength,
-            fields.dosage_form, fields.unit || 'Tablet', fields.purchase_price || 0, fields.selling_price || 0,
-            fields.min_stock_level || 10, fields.batch_number, fields.expiry_date || null, image,
+            [fields.name, fields.brand_name || null, fields.generic_name || null, barcodeVal,
+            fields.category_id || null, fields.supplier_id || null, fields.manufacturer || null,
+            fields.description || null, fields.uses || null, fields.indications || null, fields.contraindications || null,
+            fields.warnings || null, fields.side_effects || null, fields.drug_interactions || null, fields.storage_conditions || null,
+            fields.pregnancy_category || 'N', fields.breastfeeding_info || null, fields.adult_dosage || null,
+            fields.child_dosage || null, fields.overdose_info || null, fields.missed_dose_info || null, fields.strength || null,
+            fields.dosage_form || 'Tablet', fields.unit || 'Tablet', fields.purchase_price || 0, fields.selling_price || 0,
+            fields.min_stock_level || 10, fields.batch_number || null, fields.expiry_date || null, image,
             fields.requires_prescription === 'true' || fields.requires_prescription === true ? 1 : 0,
             fields.is_featured === 'true' || fields.is_featured === true ? 1 : 0,
             fields.status || 'available', id
@@ -131,7 +154,8 @@ router.put('/:id', authenticate, authorize('admin', 'pharmacist'), upload('medic
         );
         res.json({ success: true, message: 'Medicine updated successfully.' });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error.', error: error.message });
+        console.error('PUT /medicines/:id error:', error);
+        res.status(500).json({ success: false, message: error.code === 'ER_DUP_ENTRY' ? 'A medicine with this barcode already exists.' : 'Server error.', error: error.message });
     }
 });
 
@@ -199,20 +223,6 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
         res.status(500).json({ success: false, message: 'Server error during import.', error: error.message });
     } finally {
         conn.release();
-    }
-});
-
-// GET /api/medicines/search/barcode/:barcode
-router.get('/search/barcode/:barcode', authenticate, async (req, res) => {
-    try {
-        const [rows] = await pool.execute(
-            'SELECT * FROM medicines WHERE barcode = ? AND is_active = 1',
-            [req.params.barcode]
-        );
-        if (!rows.length) return res.status(404).json({ success: false, message: 'Medicine not found.' });
-        res.json({ success: true, data: rows[0] });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error.' });
     }
 });
 

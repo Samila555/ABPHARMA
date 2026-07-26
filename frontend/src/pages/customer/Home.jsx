@@ -10,6 +10,7 @@ import { MdLocalPharmacy, MdMedication } from 'react-icons/md';
 import useCartStore from '../../store/useCartStore';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import { getImageUrl } from '../../lib/api';
 
 /* ETB ETB ETB  public API (no auth needed) ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB ETB  */
 const pub = axios.create({ baseURL: '/api/public', timeout: 15000 });
@@ -82,14 +83,14 @@ function MedicineCard({ m, index }) {
                         <span className="absolute top-3 right-3 bg-red-100 text-red-600 text-[10px] font-bold px-2 py-1 rounded-full z-10">Rx</span>
                     )}
                     {m.image ? (
-                        <img src={m.image} alt={m.name}
+                        <img src={getImageUrl(m.image)} alt={m.name}
                             className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                            onError={e => { e.target.style.display = 'none'; e.target.nextSibling && (e.target.nextSibling.style.display = 'flex'); }}
                         />
-                    ) : (
-                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white font-bold text-3xl shadow-lg group-hover:scale-110 transition-transform">
-                            {m.name?.charAt(0) || 'M'}
-                        </div>
-                    )}
+                    ) : null}
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white font-bold text-3xl shadow-lg group-hover:scale-110 transition-transform" style={{ display: m.image ? 'none' : 'flex' }}>
+                        {m.name?.charAt(0) || 'M'}
+                    </div>
                     {/* Quick add btn */}
                     <motion.button
                         onClick={handleAdd}
@@ -124,6 +125,7 @@ export default function Home() {
     const [featured, setFeatured] = useState([]);
     const [categories, setCategories] = useState([]);
     const [cms, setCms] = useState({});
+    const [hasFeatured, setHasFeatured] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [newsletter, setNewsletter] = useState('');
@@ -133,11 +135,17 @@ export default function Home() {
 
     useEffect(() => {
         Promise.all([
+            // Try featured first; if none are featured, fall back to newest medicines
             pub.get('/medicines?limit=8&featured=true').catch(() => ({ data: { data: [] } })),
             pub.get('/categories').catch(() => ({ data: { data: [] } })),
-            pub.get('/medicines?limit=4&sort=newest').catch(() => ({ data: { data: [] } })),
-        ]).then(([featRes, catRes]) => {
-            setFeatured(featRes.data.data || []);
+            pub.get('/medicines?limit=8&sort=newest').catch(() => ({ data: { data: [] } })),
+        ]).then(([featRes, catRes, newestRes]) => {
+            const featuredMeds = featRes.data.data || [];
+            const newestMeds = newestRes.data.data || [];
+            // Show featured if any exist, otherwise show newest medicines
+            const useFeatured = featuredMeds.length > 0;
+            setHasFeatured(useFeatured);
+            setFeatured(useFeatured ? featuredMeds : newestMeds);
             setCategories(catRes.data.data || []);
             setLoading(false);
         });
@@ -430,9 +438,15 @@ export default function Home() {
                 <div style={{ maxWidth: 1200, margin: '0 auto' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28 }}>
                         <div>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Popular</span>
-                            <h2 style={{ fontSize: 'clamp(1.5rem,3vw,2rem)', fontWeight: 900, color: '#1e293b', marginTop: 4 }}>Featured Products</h2>
-                            <p style={{ color: '#64748b', fontSize: 14 }}>Popular and highly recommended health products</p>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+                                {hasFeatured ? 'Popular' : 'New Arrivals'}
+                            </span>
+                            <h2 style={{ fontSize: 'clamp(1.5rem,3vw,2rem)', fontWeight: 900, color: '#1e293b', marginTop: 4 }}>
+                                {hasFeatured ? 'Featured Products' : 'Latest Medicines'}
+                            </h2>
+                            <p style={{ color: '#64748b', fontSize: 14 }}>
+                                {hasFeatured ? 'Popular and highly recommended health products' : 'Recently added medicines available in our pharmacy'}
+                            </p>
                         </div>
                         <Link to="/medicines" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#0ea5e9', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
                             View All <FiArrowRight />

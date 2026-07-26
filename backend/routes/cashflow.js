@@ -12,12 +12,13 @@ router.get('/', authenticate, async (req, res) => {
         if (type) { query += ' AND cf.type = ?'; params.push(type); }
         if (from_date) { query += ' AND cf.date >= ?'; params.push(from_date); }
         if (to_date) { query += ' AND cf.date <= ?'; params.push(to_date); }
-        const [countRows] = await pool.execute(query.replace('SELECT cf.*, u.name as created_by_name', 'SELECT COUNT(*) as total'), params);
+        const [countRows] = await pool.query(query.replace('SELECT cf.*, u.name as created_by_name', 'SELECT COUNT(*) as total'), params);
         const total = countRows[0].total;
         query += ' ORDER BY cf.date DESC, cf.created_at DESC LIMIT ? OFFSET ?';
-        params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
-        const [rows] = await pool.execute(query, params);
-        res.json({ success: true, data: rows, total, page: parseInt(page), pages: Math.ceil(total / limit) });
+        const limitNum = parseInt(limit) || 30;
+        const offsetNum = (parseInt(page) - 1) * limitNum;
+        const [rows] = await pool.query(query, [...params, limitNum, offsetNum]);
+        res.json({ success: true, data: rows, total, page: parseInt(page), pages: Math.ceil(total / limitNum) });
     } catch (error) { res.status(500).json({ success: false, message: 'Server error.' }); }
 });
 

@@ -21,12 +21,13 @@ router.get('/', authenticate, async (req, res) => {
         if (from_date) { query += ' AND DATE(o.created_at) >= ?'; params.push(from_date); }
         if (to_date) { query += ' AND DATE(o.created_at) <= ?'; params.push(to_date); }
         const countQuery = query.replace('SELECT o.*, u.name as cashier_name', 'SELECT COUNT(*) as total');
-        const [countRows] = await pool.execute(countQuery, params);
+        const [countRows] = await pool.query(countQuery, params);
         const total = countRows[0].total;
         query += ' ORDER BY o.created_at DESC LIMIT ? OFFSET ?';
-        params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
-        const [rows] = await pool.execute(query, params);
-        res.json({ success: true, data: rows, total, page: parseInt(page), pages: Math.ceil(total / limit) });
+        const limitNum = parseInt(limit) || 20;
+        const offsetNum = (parseInt(page) - 1) * limitNum;
+        const [rows] = await pool.query(query, [...params, limitNum, offsetNum]);
+        res.json({ success: true, data: rows, total, page: parseInt(page), pages: Math.ceil(total / limitNum) });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error.', error: error.message });
     }
@@ -144,7 +145,7 @@ router.patch('/:id/status', authenticate, async (req, res) => {
 router.post('/:id/payment-proof', authenticate, upload('payments').single('screenshot'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No screenshot uploaded.' });
-        const screenshotPath = `/uploads/payments/${req.file.filename}`;
+        const screenshotPath = req.file.path || `/uploads/payments/${req.file.filename}`;
         await pool.execute('UPDATE orders SET payment_screenshot = ? WHERE id = ?', [screenshotPath, req.params.id]);
         res.json({ success: true, message: 'Payment screenshot uploaded successfully.', screenshot: screenshotPath });
     } catch (error) {

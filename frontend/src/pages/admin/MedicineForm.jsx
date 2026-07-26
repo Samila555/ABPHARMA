@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FiSave, FiArrowLeft, FiUpload, FiInfo } from 'react-icons/fi';
-import api from '../../lib/api';
+import api, { getImageUrl } from '../../lib/api';
 import toast from 'react-hot-toast';
 
 const pregCats = ['A', 'B', 'C', 'D', 'X', 'N'];
@@ -70,7 +70,7 @@ export default function MedicineForm() {
             api.get(`/medicines/${id}`).then(r => {
                 const d = r.data.data;
                 setForm({ ...d, expiry_date: d.expiry_date?.split('T')[0] || '', requires_prescription: !!d.requires_prescription, is_featured: !!d.is_featured });
-                if (d.image) setImagePreview(d.image);
+                if (d.image) setImagePreview(getImageUrl(d.image));
             }).catch(() => toast.error('Failed to load medicine'));
         }
     }, [id]);
