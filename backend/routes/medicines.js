@@ -224,6 +224,7 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
             const strength = item.strength || item.Strength || '';
             const dosage_form = item.dosage_form || item.form || item.Form || 'Tablet';
             const unit = item.unit || item.Unit || 'Piece';
+            const image = item.image || item.Image || item.IMAGE || item.image_url || item.imageUrl || '';
 
             // Resolve category: accept numeric ID or category name
             let category_id = null;
@@ -277,9 +278,9 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
 
             try {
                 const [result] = await conn.execute(`
-                    INSERT INTO medicines (name, brand_name, generic_name, barcode, purchase_price, selling_price, quantity, min_stock_level, category_id, supplier_id, description, strength, dosage_form, unit, status, is_active, is_featured)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)
-                `, [name, brand_name || null, generic_name || null, barcode || null, purchase_price, selling_price, quantity, min_stock_level, category_id, supplier_id, description || null, strength || null, dosage_form, unit, 'available', 1]);
+                    INSERT INTO medicines (name, brand_name, generic_name, barcode, purchase_price, selling_price, quantity, min_stock_level, category_id, supplier_id, description, strength, dosage_form, unit, image, status, is_active, is_featured)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)
+                `, [name, brand_name || null, generic_name || null, barcode || null, purchase_price, selling_price, quantity, min_stock_level, category_id, supplier_id, description || null, strength || null, dosage_form, unit, image || null, 'available', 1]);
 
                 if (quantity > 0) {
                     await conn.execute(

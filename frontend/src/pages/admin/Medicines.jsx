@@ -94,8 +94,8 @@ export default function Medicines() {
 
     const handleDownloadTemplate = () => {
         const headers = [
-            { name: 'Paracetamol 500mg', brand_name: 'Panadol', generic_name: 'Acetaminophen', barcode: '600123456789', purchase_price: 500, selling_price: 800, quantity: 100, min_stock_level: 20, category: 'Pain Relief', supplier: 'Ethio Pharma', description: 'Pain reliever and fever reducer.', strength: '500mg', dosage_form: 'Tablet', unit: 'Pack' },
-            { name: 'Amoxicillin 250mg', brand_name: 'Amoxil', generic_name: 'Amoxicillin', barcode: '600987654321', purchase_price: 1200, selling_price: 1500, quantity: 50, min_stock_level: 10, category: 'Prescription Medicines', supplier: '', description: 'Antibiotic used to treat bacterial infections.', strength: '250mg', dosage_form: 'Capsule', unit: 'Pack' }
+            { name: 'Paracetamol 500mg', brand_name: 'Panadol', generic_name: 'Acetaminophen', barcode: '600123456789', purchase_price: 500, selling_price: 800, quantity: 100, min_stock_level: 20, category: 'Pain Relief', supplier: 'Ethio Pharma', description: 'Pain reliever and fever reducer.', strength: '500mg', dosage_form: 'Tablet', unit: 'Pack', image: 'https://example.com/paracetamol.jpg' },
+            { name: 'Amoxicillin 250mg', brand_name: 'Amoxil', generic_name: 'Amoxicillin', barcode: '600987654321', purchase_price: 1200, selling_price: 1500, quantity: 50, min_stock_level: 10, category: 'Prescription Medicines', supplier: '', description: 'Antibiotic used to treat bacterial infections.', strength: '250mg', dosage_form: 'Capsule', unit: 'Pack', image: '' }
         ];
         const ws = XLSX.utils.json_to_sheet(headers);
         const wb = XLSX.utils.book_new();
