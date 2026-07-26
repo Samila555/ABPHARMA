@@ -110,6 +110,22 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Config Check — verify Cloudinary and storage setup (non-sensitive)
+app.get('/api/health/config', (req, res) => {
+    const cloudinary = !!(
+        process.env.CLOUDINARY_CLOUD_NAME &&
+        process.env.CLOUDINARY_API_KEY &&
+        process.env.CLOUDINARY_API_SECRET
+    );
+    res.json({
+        success: true,
+        cloudinary,
+        storage: cloudinary ? 'cloudinary' : 'local-disk',
+        nodeEnv: process.env.NODE_ENV || 'development',
+        hasDb: !!process.env.DB_HOST,
+    });
+});
+
 // Serve static React frontend files
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 

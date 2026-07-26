@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiTrash2, FiMinus, FiPlus, FiArrowRight, FiShield } from 'react-icons/fi';
 import useCartStore from '../../store/useCartStore';
+import MedicineImage from '../../components/MedicineImage';
 
 export default function Cart() {
     const { items, updateQuantity, removeItem, getCartTotal } = useCartStore();
@@ -49,8 +50,12 @@ export default function Cart() {
                             {items.map(item => (
                                 <div key={item.id} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 items-center">
                                     <div className="w-20 h-20 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                        {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-2" /> :
-                                            <div className="text-sky-600 font-bold text-2xl">{item.name.charAt(0)}</div>}
+                                        <MedicineImage
+                                            src={item.image}
+                                            name={item.name}
+                                            className="w-full h-full object-contain p-2"
+                                            fallbackSize={40}
+                                        />
                                     </div>
 
                                     <div className="flex-1 text-center sm:text-left min-w-0">

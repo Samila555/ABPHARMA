@@ -4,6 +4,25 @@ const { authenticate, authorize } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const router = express.Router();
 
+// GET /api/medicines/diag/images — diagnostic: check image data in DB
+router.get('/diag/images', authenticate, authorize('admin'), async (req, res) => {
+    try {
+        const [rows] = await pool.query(
+            'SELECT id, name, image FROM medicines WHERE is_active = 1 ORDER BY id DESC LIMIT 20'
+        );
+        const summary = {
+            total: rows.length,
+            nullImage: rows.filter(r => !r.image).length,
+            localPaths: rows.filter(r => r.image && r.image.startsWith('/')).length,
+            cloudinaryUrls: rows.filter(r => r.image && r.image.startsWith('http')).length,
+            samples: rows.map(r => ({ id: r.id, name: r.name, image: r.image ? r.image.substring(0, 100) : null })),
+        };
+        res.json({ success: true, data: summary });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // GET /api/medicines - List with filters
 router.get('/', async (req, res) => {
     try {
@@ -81,8 +100,8 @@ router.post('/', authenticate, authorize('admin', 'pharmacist'), upload('medicin
             unit, purchase_price, selling_price, quantity, min_stock_level, batch_number,
             expiry_date, requires_prescription, is_featured, status
         } = req.body;
-        // Cloudinary gives req.file.path (full https:// URL); local disk gives req.file.filename
         const image = req.file ? (req.file.path || `/uploads/medicines/${req.file.filename}`) : null;
+        console.log('📸 POST /medicines:', { hasFile: !!req.file, image: image ? image.substring(0, 100) : null });
         // Convert empty barcode to null to avoid UNIQUE constraint violations
         const barcodeVal = barcode && barcode.trim() ? barcode.trim() : null;
         const [result] = await pool.execute(`
