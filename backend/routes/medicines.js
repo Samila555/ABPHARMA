@@ -197,44 +197,103 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
             return res.status(400).json({ success: false, message: 'Invalid data format.' });
         }
 
+        // Build category lookup: name → id (and slug for auto-create)
+        const [cats] = await conn.query('SELECT id, name, slug FROM categories');
+        const catByName = {};
+        cats.forEach(c => { catByName[c.name.toLowerCase()] = c.id; });
+
+        // Build supplier lookup: name → id
+        const [sups] = await conn.query('SELECT id, name FROM suppliers');
+        const supByName = {};
+        sups.forEach(s => { supByName[s.name.toLowerCase()] = s.id; });
+
         let count = 0;
+        const errors = [];
         for (const item of medicines) {
-            // Flexible property names to handle various Excel headers
             const name = item.name || item.Name || item.NAME;
             if (!name) continue;
 
             const brand_name = item.brand_name || item.Brand || item.brand || '';
             const generic_name = item.generic_name || item.Generic || item.generic || '';
             const barcode = item.barcode || item.Barcode || '';
-
-            // Allow string parsing and fallback for prices and quantities
             const selling_price = parseFloat(item.selling_price || item.Price || item.price || 0) || 0;
             const purchase_price = parseFloat(item.purchase_price || item.Cost || item.cost || 0) || 0;
             const quantity = parseInt(item.quantity || item.Quantity || item.Stock || item.stock || 0, 10) || 0;
             const min_stock_level = parseInt(item.min_stock_level || item.MinStock || 10, 10) || 10;
-
-            const supplier_id = item.supplier_id || null;
-            const category_id = item.category_id || null;
             const description = item.description || item.Description || '';
             const strength = item.strength || item.Strength || '';
             const dosage_form = item.dosage_form || item.form || item.Form || 'Tablet';
             const unit = item.unit || item.Unit || 'Piece';
 
-            const [result] = await conn.execute(`
-              INSERT INTO medicines (name, brand_name, generic_name, barcode, purchase_price, selling_price, quantity, min_stock_level, category_id, supplier_id, description, strength, dosage_form, unit, status, is_active, is_featured)
-              VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)
-            `, [name, brand_name, generic_name, barcode, purchase_price, selling_price, quantity, min_stock_level, category_id, supplier_id, description, strength, dosage_form, unit, 'available', 1]);
-
-            if (quantity > 0) {
-                await conn.execute(
-                    'INSERT INTO inventory_transactions (medicine_id, transaction_type, quantity, balance_before, balance_after, reason, created_by) VALUES (?,?,?,?,?,?,?)',
-                    [result.insertId, 'stock_in', quantity, 0, quantity, 'Excel Bulk Import', req.user.id]
-                );
+            // Resolve category: accept numeric ID or category name
+            let category_id = null;
+            const catRaw = item.category_id || item.Category || item.category || item.category_name;
+            if (catRaw !== undefined && catRaw !== null && catRaw !== '') {
+                const catNum = parseInt(catRaw, 10);
+                if (!isNaN(catNum) && catByName[String(catNum)] !== undefined) {
+                    category_id = catNum;
+                } else if (!isNaN(catNum)) {
+                    category_id = catNum;
+                } else {
+                    // It's a category name — look up or auto-create
+                    const catKey = String(catRaw).trim().toLowerCase();
+                    if (catByName[catKey]) {
+                        category_id = catByName[catKey];
+                    } else {
+                        const slug = catKey.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                        const [newCat] = await conn.execute(
+                            'INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)',
+                            [catRaw.trim(), slug, `Auto-created from import`]
+                        );
+                        category_id = newCat.insertId;
+                        catByName[catKey] = category_id;
+                    }
+                }
             }
-            count++;
+
+            // Resolve supplier: accept numeric ID or supplier name
+            let supplier_id = null;
+            const supRaw = item.supplier_id || item.Supplier || item.supplier || item.supplier_name;
+            if (supRaw !== undefined && supRaw !== null && supRaw !== '') {
+                const supNum = parseInt(supRaw, 10);
+                if (!isNaN(supNum) && supByName[String(supNum)] !== undefined) {
+                    supplier_id = supNum;
+                } else if (!isNaN(supNum)) {
+                    supplier_id = supNum;
+                } else {
+                    const supKey = String(supRaw).trim().toLowerCase();
+                    if (supByName[supKey]) {
+                        supplier_id = supByName[supKey];
+                    } else {
+                        const [newSup] = await conn.execute(
+                            'INSERT INTO suppliers (name, country) VALUES (?, ?)',
+                            [supRaw.trim(), 'Ethiopia']
+                        );
+                        supplier_id = newSup.insertId;
+                        supByName[supKey] = supplier_id;
+                    }
+                }
+            }
+
+            try {
+                const [result] = await conn.execute(`
+                    INSERT INTO medicines (name, brand_name, generic_name, barcode, purchase_price, selling_price, quantity, min_stock_level, category_id, supplier_id, description, strength, dosage_form, unit, status, is_active, is_featured)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)
+                `, [name, brand_name || null, generic_name || null, barcode || null, purchase_price, selling_price, quantity, min_stock_level, category_id, supplier_id, description || null, strength || null, dosage_form, unit, 'available', 1]);
+
+                if (quantity > 0) {
+                    await conn.execute(
+                        'INSERT INTO inventory_transactions (medicine_id, transaction_type, quantity, balance_before, balance_after, reason, created_by) VALUES (?,?,?,?,?,?,?)',
+                        [result.insertId, 'stock_in', quantity, 0, quantity, 'Excel Bulk Import', req.user.id]
+                    );
+                }
+                count++;
+            } catch (rowErr) {
+                errors.push({ name, error: rowErr.message });
+            }
         }
         await conn.commit();
-        res.json({ success: true, message: 'Import successful', count });
+        res.json({ success: true, message: 'Import successful', count, errors: errors.length ? errors : undefined });
     } catch (error) {
         await conn.rollback();
         console.error('Import error:', error);

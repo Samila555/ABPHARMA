@@ -66,7 +66,11 @@ export default function Medicines() {
             }
 
             const res = await api.post('/medicines/import', { medicines: jsonData });
-            toast.success(`Imported ${res.data.count} medicines successfully!`);
+            if (res.data.errors && res.data.errors.length > 0) {
+                toast.success(`Imported ${res.data.count} medicines (${res.data.errors.length} failed: ${res.data.errors.map(e => e.name).join(', ')})`);
+            } else {
+                toast.success(`Imported ${res.data.count} medicines successfully!`);
+            }
             fetchMedicines();
         } catch (error) {
             console.error('Import error:', error);
@@ -90,8 +94,8 @@ export default function Medicines() {
 
     const handleDownloadTemplate = () => {
         const headers = [
-            { name: 'Paracetamol 500mg', brand_name: 'Panadol', generic_name: 'Acetaminophen', barcode: '123456789', purchase_price: 500, selling_price: 800, quantity: 100, min_stock_level: 20, category_id: 1, supplier_id: 1, description: 'Pain reliever and fever reducer.', strength: '500mg', dosage_form: 'Tablet', unit: 'Pack' },
-            { name: 'Amoxicillin 250mg', brand_name: 'Amoxil', generic_name: 'Amoxicillin', barcode: '987654321', purchase_price: 1200, selling_price: 1500, quantity: 50, min_stock_level: 10, category_id: 2, supplier_id: 2, description: 'Antibiotic used to treat bacterial infections.', strength: '250mg', dosage_form: 'Capsule', unit: 'Pack' }
+            { name: 'Paracetamol 500mg', brand_name: 'Panadol', generic_name: 'Acetaminophen', barcode: '600123456789', purchase_price: 500, selling_price: 800, quantity: 100, min_stock_level: 20, category: 'Pain Relief', supplier: 'Ethio Pharma', description: 'Pain reliever and fever reducer.', strength: '500mg', dosage_form: 'Tablet', unit: 'Pack' },
+            { name: 'Amoxicillin 250mg', brand_name: 'Amoxil', generic_name: 'Amoxicillin', barcode: '600987654321', purchase_price: 1200, selling_price: 1500, quantity: 50, min_stock_level: 10, category: 'Prescription Medicines', supplier: '', description: 'Antibiotic used to treat bacterial infections.', strength: '250mg', dosage_form: 'Capsule', unit: 'Pack' }
         ];
         const ws = XLSX.utils.json_to_sheet(headers);
         const wb = XLSX.utils.book_new();
