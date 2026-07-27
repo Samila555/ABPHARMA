@@ -104,7 +104,7 @@ router.post('/', authenticate, authorize('admin', 'pharmacist'), upload('medicin
         console.log('📸 POST /medicines:', { hasFile: !!req.file, image: image ? image.substring(0, 100) : null });
         // Convert empty barcode to null to avoid UNIQUE constraint violations
         const barcodeVal = barcode && barcode.trim() ? barcode.trim() : null;
-        const [result] = await pool.execute(`
+        const [result] = await pool.query(`
       INSERT INTO medicines (name, brand_name, generic_name, barcode, category_id, supplier_id,
         manufacturer, description, uses, indications, contraindications, warnings, side_effects,
         drug_interactions, storage_conditions, pregnancy_category, breastfeeding_info, adult_dosage,
@@ -149,7 +149,7 @@ router.put('/:id', authenticate, authorize('admin', 'pharmacist'), upload('medic
         const image = req.file ? req.file.path : existing[0].image;
         // Convert empty barcode to null to avoid UNIQUE constraint violations
         const barcodeVal = fields.barcode && fields.barcode.trim() ? fields.barcode.trim() : null;
-        await pool.execute(`
+        await pool.query(`
       UPDATE medicines SET name=?, brand_name=?, generic_name=?, barcode=?, category_id=?,
         supplier_id=?, manufacturer=?, description=?, uses=?, indications=?, contraindications=?,
         warnings=?, side_effects=?, drug_interactions=?, storage_conditions=?, pregnancy_category=?,

@@ -24,7 +24,7 @@ router.post('/', authenticate, upload('prescriptions').single('image'), async (r
     try {
         const { customer_id, doctor_name, doctor_phone, hospital, prescription_date, notes } = req.body;
         const image = req.file ? req.file.path : null;
-        const [result] = await pool.execute(
+        const [result] = await pool.query(
             'INSERT INTO prescriptions (customer_id, doctor_name, doctor_phone, hospital, prescription_date, image, notes) VALUES (?,?,?,?,?,?,?)',
             [customer_id || null, doctor_name, doctor_phone, hospital, prescription_date || null, image, notes]
         );

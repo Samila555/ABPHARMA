@@ -5,9 +5,9 @@ const fs = require('fs');
 /**
  * Smart upload middleware:
  *  - If CLOUDINARY env vars are set → buffer in memory, upload to Cloudinary via SDK
- *  - Otherwise → save to local disk
+ *  - Otherwise → convert to base64 data URI and store in database
  *
- * Always normalizes req.file.path to be a web-accessible URL path.
+ * Images MUST persist — Render's filesystem is ephemeral.
  */
 
 let cloudinaryConfigured = false;
@@ -22,7 +22,7 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && proce
     cloudinaryConfigured = true;
     console.log('☁️  Cloudinary image storage enabled');
 } else {
-    console.log('💾  Local disk image storage (set CLOUDINARY_* env vars for production)');
+    console.log('💾  Database image storage (base64) — images stored directly in MySQL');
 }
 
 const fileFilter = (req, file, cb) => {
@@ -34,52 +34,53 @@ const fileFilter = (req, file, cb) => {
 };
 
 /**
- * Wraps a multer instance so that after processing:
- * - If Cloudinary was used: req.file.path = https:// Cloudinary URL (set by SDK upload)
- * - If disk storage was used: req.file.path = /uploads/<folder>/<filename> (web URL, NOT filesystem path)
+ * Compress/resize a buffer using sharp if available, otherwise return as-is.
  */
-function wrapMulter(multerInstance, folder) {
-    const originalSingle = multerInstance.single.bind(multerInstance);
-    multerInstance.single = (fieldName) => {
-        const multerMiddleware = originalSingle(fieldName);
-        return (req, res, next) => {
-            multerMiddleware(req, res, (err) => {
-                if (err) return next(err);
-                if (!req.file) return next();
+async function processImage(buffer, mimetype) {
+    try {
+        const sharp = require('sharp');
+        let img = sharp(buffer);
+        const meta = await img.metadata();
 
-                // For disk storage: multer sets req.file.path to the full filesystem path.
-                // We need to replace it with the web-accessible URL path.
-                if (!cloudinaryConfigured && req.file.path && !req.file.path.startsWith('http')) {
-                    req.file.path = `/uploads/${folder}/${req.file.filename}`;
-                    console.log('📁 Disk upload:', req.file.path);
-                }
+        // Resize if wider than 800px (preserve aspect ratio)
+        if (meta.width > 800) {
+            img = img.resize({ width: 800, withoutEnlargement: true });
+        }
 
-                next();
-            });
-        };
-    };
-    return multerInstance;
+        // Convert to webp for smaller size (except keep gif as-is)
+        if (mimetype !== 'image/gif') {
+            img = img.webp({ quality: 80 });
+            mimetype = 'image/webp';
+        }
+
+        const processed = await img.toBuffer();
+        return { buffer: processed, mimetype };
+    } catch {
+        // sharp not available, return original
+        return { buffer, mimetype };
+    }
 }
 
 const upload = (folder = 'general') => {
-    if (cloudinaryConfigured) {
-        const storage = multer.memoryStorage();
-        const multerInstance = multer({
-            storage,
-            fileFilter,
-            limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 },
-        });
+    // Always use memoryStorage — we never write to disk
+    const storage = multer.memoryStorage();
+    const multerInstance = multer({
+        storage,
+        fileFilter,
+        limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 },
+    });
 
-        // Override .single() to upload buffer to Cloudinary after multer processes it
-        const originalSingle = multerInstance.single.bind(multerInstance);
-        multerInstance.single = (fieldName) => {
-            const multerMiddleware = originalSingle(fieldName);
-            return async (req, res, next) => {
-                multerMiddleware(req, res, async (err) => {
-                    if (err) return next(err);
-                    if (!req.file) return next();
+    const originalSingle = multerInstance.single.bind(multerInstance);
+    multerInstance.single = (fieldName) => {
+        const multerMiddleware = originalSingle(fieldName);
+        return async (req, res, next) => {
+            multerMiddleware(req, res, async (err) => {
+                if (err) return next(err);
+                if (!req.file) return next();
 
-                    try {
+                try {
+                    if (cloudinaryConfigured) {
+                        // Upload to Cloudinary
                         const cloudinary = require('cloudinary').v2;
                         const b64 = req.file.buffer.toString('base64');
                         const dataURI = `data:${req.file.mimetype};base64,${b64}`;
@@ -91,33 +92,24 @@ const upload = (folder = 'general') => {
                         req.file.path = result.secure_url;
                         req.file.filename = result.public_id;
                         console.log('☁️  Cloudinary upload:', req.file.path.substring(0, 80));
-                        next();
-                    } catch (uploadErr) {
-                        console.error('Cloudinary upload failed:', uploadErr.message);
-                        next(uploadErr);
+                    } else {
+                        // Compress and convert to base64 data URI for database storage
+                        const { buffer, mimetype } = await processImage(req.file.buffer, req.file.mimetype);
+                        const base64 = buffer.toString('base64');
+                        req.file.path = `data:${mimetype};base64,${base64}`;
+                        req.file.filename = `${folder}_${Date.now()}`;
+                        console.log('💾 DB storage: base64 image (%d bytes)', buffer.length);
                     }
-                });
-            };
+                    next();
+                } catch (uploadErr) {
+                    console.error('Image processing failed:', uploadErr.message);
+                    next(uploadErr);
+                }
+            });
         };
+    };
 
-        return multerInstance;
-    }
-
-    // Local disk storage
-    const storage = multer.diskStorage({
-        destination: (req, file, cb) => {
-            const dir = path.join(__dirname, '..', 'uploads', folder);
-            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-            cb(null, dir);
-        },
-        filename: (req, file, cb) => {
-            const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
-            cb(null, unique + path.extname(file.originalname));
-        },
-    });
-    const multerInstance = multer({ storage, fileFilter, limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 } });
-
-    return wrapMulter(multerInstance, folder);
+    return multerInstance;
 };
 
 module.exports = upload;

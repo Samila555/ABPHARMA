@@ -29,7 +29,30 @@ const publicRoutes = require('./routes/public');
 const app = express();
 
 // Connect to Database
-connectDB();
+connectDB().then(async () => {
+    // Auto-migrate image columns to LONGTEXT for base64 storage
+    // This ensures images survive Render's ephemeral filesystem
+    try {
+        const { pool } = require('./config/database');
+        const migrations = [
+            'ALTER TABLE medicines MODIFY COLUMN image LONGTEXT',
+            'ALTER TABLE categories MODIFY COLUMN image LONGTEXT',
+            'ALTER TABLE prescriptions MODIFY COLUMN image LONGTEXT',
+            'ALTER TABLE cms_content MODIFY COLUMN image LONGTEXT',
+            'ALTER TABLE banners MODIFY COLUMN image LONGTEXT',
+            'ALTER TABLE offers MODIFY COLUMN image LONGTEXT',
+            'ALTER TABLE orders MODIFY COLUMN payment_screenshot LONGTEXT',
+            'ALTER TABLE purchase_orders MODIFY COLUMN invoice_image LONGTEXT',
+            'ALTER TABLE users MODIFY COLUMN avatar LONGTEXT',
+        ];
+        for (const sql of migrations) {
+            await pool.query(sql).catch(() => {});
+        }
+        console.log('✅ Image columns verified as LONGTEXT');
+    } catch (e) {
+        console.log('⚠️  Image column migration skipped:', e.message);
+    }
+});
 
 // Security Middleware
 app.use(helmet({
@@ -69,9 +92,9 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Body Parser
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Body Parser — 50mb limit needed for base64 image data in JSON payloads
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Logging
 if (process.env.NODE_ENV !== 'production') {
