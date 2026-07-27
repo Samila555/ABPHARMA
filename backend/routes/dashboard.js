@@ -177,4 +177,21 @@ router.get('/expiry-count', authenticate, async (req, res) => {
     }
 });
 
+// GET /api/dashboard/urgent-expiry — medicines expiring within 3 days (sound alert)
+router.get('/urgent-expiry', authenticate, async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT id, name, expiry_date, quantity, selling_price,
+                DATEDIFF(expiry_date, CURDATE()) as days_left
+            FROM medicines
+            WHERE expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+            AND is_active = 1
+            ORDER BY expiry_date ASC
+        `);
+        res.json({ success: true, data: rows, count: rows.length });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server error.' });
+    }
+});
+
 module.exports = router;
