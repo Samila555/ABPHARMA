@@ -184,6 +184,9 @@ export default function MedicineForm() {
                                 label="Unit" name="unit"
                                 placeholder="e.g. Tablet, Bottle, Strip"
                             />
+                            <Field form={form} set={set}
+                                label="Expiry Date" name="expiry_date" type="date"
+                            />
                             <div className="sm:col-span-2">
                                 <Field form={form} set={set}
                                     label="Description" name="description" textarea rows={10}
@@ -295,10 +298,6 @@ export default function MedicineForm() {
                             <Field form={form} set={set}
                                 label="Batch Number" name="batch_number"
                                 placeholder="e.g. BN-2024-00123"
-                            />
-                            <Field form={form} set={set}
-                                label="Expiry Date" name="expiry_date" type="date"
-                                placeholder=""
                             />
                         </div>
                     )}
