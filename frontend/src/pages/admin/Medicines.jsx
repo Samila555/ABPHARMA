@@ -82,12 +82,12 @@ export default function Medicines() {
     };
 
     const handleDelete = async (id, name) => {
-        if (!confirm(`Deactivate "${name}"?`)) return;
+        if (!window.confirm(`⚠️ PERMANENTLY DELETE "${name}"?\n\nThis will completely remove this medicine and all its data from the database. This action CANNOT be undone.`)) return;
         try {
             await api.delete(`/medicines/${id}`);
-            toast.success('Medicine deactivated');
+            toast.success(`"${name}" permanently deleted`);
             fetchMedicines();
-        } catch { toast.error('Failed to deactivate'); }
+        } catch { toast.error('Failed to delete medicine'); }
     };
 
     const fmt = (n) => `ETB ${parseFloat(n || 0).toLocaleString()}`;

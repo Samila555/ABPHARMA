@@ -177,13 +177,27 @@ router.put('/:id', authenticate, authorize('admin', 'pharmacist'), upload('medic
     }
 });
 
-// DELETE /api/medicines/:id
+// DELETE /api/medicines/:id (hard delete — completely removes from database)
 router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
     try {
-        await pool.execute('UPDATE medicines SET is_active = 0, status = ? WHERE id = ?', ['discontinued', req.params.id]);
-        res.json({ success: true, message: 'Medicine deactivated.' });
+        const [existing] = await pool.query('SELECT id, name, image FROM medicines WHERE id = ?', [req.params.id]);
+        if (!existing.length) return res.status(404).json({ success: false, message: 'Medicine not found.' });
+
+        const medicineId = req.params.id;
+
+        // Delete related records first ( FK constraints may handle some, but be explicit)
+        await pool.query('DELETE FROM inventory_transactions WHERE medicine_id = ?', [medicineId]);
+        await pool.query('UPDATE order_items SET medicine_id = NULL WHERE medicine_id = ?', [medicineId]);
+        await pool.query('UPDATE purchase_order_items SET medicine_id = NULL WHERE medicine_id = ?', [medicineId]);
+        await pool.query('UPDATE offers SET medicine_id = NULL WHERE medicine_id = ?', [medicineId]);
+
+        // Hard delete the medicine
+        await pool.query('DELETE FROM medicines WHERE id = ?', [medicineId]);
+
+        res.json({ success: true, message: `"${existing[0].name}" has been permanently deleted.` });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error.' });
+        console.error('DELETE /medicines/:id error:', error);
+        res.status(500).json({ success: false, message: 'Server error.', error: error.message });
     }
 });
 
