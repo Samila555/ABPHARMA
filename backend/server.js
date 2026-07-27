@@ -143,7 +143,7 @@ app.get('/api/health/config', (req, res) => {
     res.json({
         success: true,
         cloudinary,
-        storage: cloudinary ? 'cloudinary' : 'local-disk',
+        storage: cloudinary ? 'cloudinary' : 'database-base64',
         nodeEnv: process.env.NODE_ENV || 'development',
         hasDb: !!process.env.DB_HOST,
     });

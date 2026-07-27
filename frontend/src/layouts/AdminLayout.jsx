@@ -4,7 +4,7 @@ import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminTopBar from '../components/admin/AdminTopBar';
 import useAuthStore from '../store/useAuthStore';
 import api from '../lib/api';
-import { FiCloud, FiAlertTriangle } from 'react-icons/fi';
+import { FiCloud, FiInfo } from 'react-icons/fi';
 
 export default function AdminLayout() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -43,38 +43,19 @@ export default function AdminLayout() {
             >
                 <AdminTopBar onToggleSidebar={toggleSidebar} user={user} />
 
-                {/* Cloudinary Warning Banner */}
+                {/* Optional Cloudinary upgrade notice */}
                 {storageConfig && !storageConfig.cloudinary && (
-                    <div className="mx-6 mt-4 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl px-5 py-4 flex items-start gap-3 shadow-sm">
-                        <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <FiAlertTriangle size={20} className="text-red-600" />
-                        </div>
-                        <div className="flex-1">
-                            <h4 className="font-bold text-red-800 text-sm">Images are NOT being saved permanently</h4>
-                            <p className="text-xs text-red-600 mt-1 leading-relaxed">
-                                Cloudinary is not configured. All uploaded images save to local disk and <strong>will be lost</strong> every time the server restarts.
-                                To fix this permanently:
-                            </p>
-                            <ol className="text-xs text-red-600 mt-2 space-y-1 list-decimal list-inside">
-                                <li>Go to <a href="https://cloudinary.com" target="_blank" rel="noreferrer" className="underline font-semibold hover:text-red-800">cloudinary.com</a> and create a free account</li>
-                                <li>Copy your <strong>Cloud Name</strong>, <strong>API Key</strong>, and <strong>API Secret</strong> from the Dashboard</li>
-                                <li>Go to Render Dashboard → your service → Environment → abpharma-env group</li>
-                                <li>Add these 3 environment variables:
-                                    <code className="block bg-red-100 text-red-900 px-2 py-1 rounded mt-1 font-mono text-[11px]">
-                                        CLOUDINARY_CLOUD_NAME=your_cloud_name<br/>
-                                        CLOUDINARY_API_KEY=your_api_key<br/>
-                                        CLOUDINARY_API_SECRET=your_api_secret
-                                    </code>
-                                </li>
-                                <li>Click <strong>Save</strong> and wait for Render to redeploy</li>
-                            </ol>
-                            <p className="text-xs text-red-500 mt-2 italic">After setup, ALL new uploads will be stored permanently on Cloudinary.</p>
-                        </div>
-                        <div className="flex-shrink-0">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-bold">
-                                <FiCloud size={12} /> Not Configured
-                            </span>
-                        </div>
+                    <div className="mx-6 mt-4 bg-sky-50 border border-sky-200 rounded-lg px-4 py-3 flex items-center gap-3 text-sm">
+                        <FiInfo size={16} className="text-sky-600 flex-shrink-0" />
+                        <p className="text-sky-700">
+                            Images are stored in the database. For faster loading and lower database size, you can optionally set up{' '}
+                            <a href="https://cloudinary.com" target="_blank" rel="noreferrer" className="underline font-semibold hover:text-sky-900">Cloudinary</a>{' '}
+                            via Render environment variables.
+                        </p>
+                        <button onClick={() => setStorageConfig({ ...storageConfig, cloudinary: 'dismissed' })}
+                            className="text-sky-400 hover:text-sky-600 flex-shrink-0 ml-auto text-xs">
+                            Dismiss
+                        </button>
                     </div>
                 )}
 
