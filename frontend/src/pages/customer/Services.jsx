@@ -8,11 +8,11 @@ import {
 } from 'lucide-react';
 
 const fadeUp = {
-    hidden: { opacity: 0, y: 24 },
-    visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.08, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] } }),
+    hidden: { opacity: 0, y: 32 },
+    visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] } }),
 };
 
-const stagger = { visible: { transition: { staggerChildren: 0.08 } } };
+const stagger = { visible: { transition: { staggerChildren: 0.1 } } };
 
 const SERVICES = [
     {
@@ -115,33 +115,50 @@ export default function Services() {
     const [openFaq, setOpenFaq] = useState(null);
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC]">
+        <div className="min-h-screen" style={{ background: '#F8FAFC' }}>
 
             {/* ───── Hero ───── */}
             <section className="relative overflow-hidden bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32">
-                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                {/* Subtle radial background */}
+                <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 70% 50%, rgba(37,99,235,0.03) 0%, transparent 70%)' }} />
+
+                <div className="relative max-w-7xl mx-auto px-5 sm:px-8 lg:px-12" style={{ paddingTop: '80px', paddingBottom: '80px' }}>
+                    <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
                         <motion.div initial="hidden" animate="visible" variants={stagger}>
-                            <motion.div variants={fadeUp} custom={0} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 mb-6">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                <span className="text-blue-600 text-xs font-semibold uppercase tracking-widest">Our Premium Services</span>
+                            <motion.div variants={fadeUp} custom={0}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8"
+                                style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.1)' }}>
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]" />
+                                <span className="text-[#2563EB] text-[11px] font-semibold uppercase" style={{ letterSpacing: '0.12em' }}>Our Premium Services</span>
                             </motion.div>
 
-                            <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#0F172A] tracking-tight leading-[1.1] mb-6">
+                            <motion.h1 variants={fadeUp} custom={1}
+                                className="mb-8"
+                                style={{ fontFamily: 'Inter, system-ui, sans-serif', fontSize: 'clamp(2.25rem, 5vw, 3.75rem)', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em', lineHeight: 1.08 }}>
                                 Comprehensive{' '}
-                                <span className="text-[#2563EB]">Healthcare</span>{' '}
+                                <span style={{ color: '#2563EB' }}>Healthcare</span>{' '}
                                 Services
                             </motion.h1>
 
-                            <motion.p variants={fadeUp} custom={2} className="text-lg text-slate-500 leading-relaxed max-w-xl mb-8">
+                            <motion.p variants={fadeUp} custom={2}
+                                className="mb-10 max-w-xl"
+                                style={{ fontSize: '18px', lineHeight: 1.8, color: '#64748B', fontWeight: 400, letterSpacing: '-0.01em' }}>
                                 At ABPharma, we provide healthcare solutions beyond medicines. Book professional pharmacy services, health screenings, vaccinations, and expert consultations—all in one place.
                             </motion.p>
 
-                            <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
-                                <Link to="/contact" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-[14px] bg-[#2563EB] text-white font-semibold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                            <motion.div variants={fadeUp} custom={3} className="flex flex-wrap items-center gap-4">
+                                <Link to="/contact"
+                                    className="inline-flex items-center gap-2.5 font-semibold transition-all duration-300"
+                                    style={{ height: '48px', padding: '0 28px', borderRadius: '12px', background: 'linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%)', color: '#fff', fontSize: '14px', boxShadow: '0 4px 16px rgba(37,99,235,0.3)' }}
+                                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(37,99,235,0.4)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(37,99,235,0.3)'; }}>
                                     Book Appointment <ArrowRight size={16} />
                                 </Link>
-                                <a href="#services" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-[14px] border border-slate-200 text-[#0F172A] font-semibold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all duration-300">
+                                <a href="#services"
+                                    className="inline-flex items-center gap-2 font-semibold transition-all duration-300"
+                                    style={{ height: '48px', padding: '0 28px', borderRadius: '12px', border: '1px solid #E5E7EB', color: '#0F172A', fontSize: '14px' }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.borderColor = '#CBD5E1'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#E5E7EB'; }}>
                                     View All Services
                                 </a>
                             </motion.div>
@@ -151,11 +168,11 @@ export default function Services() {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.6, delay: 0.3 }}
+                            transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
                             className="relative flex items-center justify-center"
                         >
                             <div className="relative w-full max-w-lg mx-auto">
-                                <div className="absolute inset-0 m-auto w-[280px] h-[280px] sm:w-[340px] sm:h-[340px] rounded-full bg-blue-50/80 border border-blue-100/60" />
+                                <div className="absolute inset-0 m-auto w-[300px] h-[300px] sm:w-[360px] sm:h-[360px] rounded-full" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.08)' }} />
 
                                 <svg viewBox="0 0 500 440" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative z-10 w-full h-auto">
                                     <rect x="180" y="40" width="140" height="140" rx="28" fill="#EFF6FF" stroke="#BFDBFE" strokeWidth="1.5" />
@@ -194,16 +211,20 @@ export default function Services() {
             </section>
 
             {/* ───── Stats ───── */}
-            <section className="py-12 sm:py-16 bg-white border-y border-slate-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8" initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }} variants={stagger}>
+            <section className="bg-white" style={{ borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #F1F5F9' }}>
+                <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12" style={{ paddingBlock: '48px' }}>
+                    <motion.div className="grid grid-cols-2 lg:grid-cols-4 gap-5" initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }} variants={stagger}>
                         {STATS.map((s, i) => (
-                            <motion.div key={i} variants={fadeUp} custom={i} className="text-center p-6 sm:p-8 rounded-[20px] bg-[#F8FAFC] border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all duration-300">
-                                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
+                            <motion.div key={i} variants={fadeUp} custom={i}
+                                className="text-center rounded-2xl transition-all duration-300"
+                                style={{ padding: '32px 24px', background: '#F8FAFC', border: '1px solid #F1F5F9', borderRadius: '16px' }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(37,99,235,0.15)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(15,23,42,0.06)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = '#F1F5F9'; e.currentTarget.style.boxShadow = 'none'; }}>
+                                <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(37,99,235,0.06)' }}>
                                     <s.icon size={22} className="text-[#2563EB]" strokeWidth={1.8} />
                                 </div>
-                                <div className="text-3xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight mb-1">{s.value}</div>
-                                <div className="text-sm text-slate-500 font-medium">{s.label}</div>
+                                <div style={{ fontSize: '32px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: '4px' }}>{s.value}</div>
+                                <div style={{ fontSize: '13px', color: '#64748B', fontWeight: 500 }}>{s.label}</div>
                             </motion.div>
                         ))}
                     </motion.div>
@@ -211,52 +232,84 @@ export default function Services() {
             </section>
 
             {/* ───── Services Grid ───── */}
-            <section id="services" className="py-16 sm:py-24">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
-                        <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight mb-4">What We Offer</motion.h2>
-                        <motion.p variants={fadeUp} custom={1} className="text-slate-500 text-lg">Professional pharmacy services designed to keep you and your family healthy.</motion.p>
+            <section id="services">
+                <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12" style={{ paddingBlock: '80px' }}>
+                    <motion.div className="text-center max-w-2xl mx-auto mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                        <motion.h2 variants={fadeUp}
+                            style={{ fontFamily: 'Inter, system-ui, sans-serif', fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em', marginBottom: '12px' }}>
+                            What We Offer
+                        </motion.h2>
+                        <motion.p variants={fadeUp} custom={1}
+                            style={{ fontSize: '17px', lineHeight: 1.7, color: '#64748B' }}>
+                            Professional pharmacy services designed to keep you and your family healthy.
+                        </motion.p>
                     </motion.div>
 
-                    <motion.div className="grid md:grid-cols-2 gap-6 sm:gap-8" initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
+                    <motion.div className="grid md:grid-cols-2 gap-8" initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
                         {SERVICES.map((svc, i) => (
                             <motion.div key={i} variants={fadeUp} custom={i}
-                                className="group bg-white rounded-[20px] border border-slate-100 p-7 sm:p-8 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-200/60 hover:border-slate-200 transition-all duration-300">
-                                <div className="flex items-start gap-5 mb-5">
-                                    <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center flex-shrink-0 group-hover:bg-[#2563EB] group-hover:shadow-lg group-hover:shadow-blue-200 transition-all duration-300">
-                                        <svc.icon size={26} className="text-[#2563EB] group-hover:text-white transition-colors duration-300" strokeWidth={1.8} />
+                                className="group bg-white transition-all duration-300"
+                                style={{ borderRadius: '24px', border: '1px solid #E5E7EB', boxShadow: '0 8px 30px rgba(15,23,42,0.06)', padding: '32px' }}
+                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 20px 50px rgba(15,23,42,0.1)'; e.currentTarget.style.borderColor = 'rgba(37,99,235,0.15)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(15,23,42,0.06)'; e.currentTarget.style.borderColor = '#E5E7EB'; }}>
+
+                                {/* Top: Icon + Rating */}
+                                <div className="flex items-start justify-between mb-6">
+                                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300"
+                                        style={{ background: 'rgba(37,99,235,0.06)' }}>
+                                        <svc.icon size={28} className="text-[#2563EB] transition-transform duration-300 group-hover:scale-110" strokeWidth={1.8} />
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-lg font-bold text-[#0F172A] mb-1">{svc.title}</h3>
-                                        <p className="text-sm text-slate-500 leading-relaxed">{svc.desc}</p>
+                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.15)' }}>
+                                        <Star size={13} className="text-amber-500 fill-amber-400" />
+                                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{svc.rating}</span>
+                                        <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 500 }}>({svc.reviews.toLocaleString()})</span>
                                     </div>
                                 </div>
 
+                                {/* Title */}
+                                <h3 style={{ fontFamily: 'Inter, system-ui, sans-serif', fontSize: '22px', fontWeight: 700, color: '#0F172A', letterSpacing: '-0.02em', marginBottom: '10px', lineHeight: 1.3 }}>
+                                    {svc.title}
+                                </h3>
+
+                                {/* Description */}
+                                <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#64748B', marginBottom: '20px', letterSpacing: '-0.01em' }}>
+                                    {svc.desc}
+                                </p>
+
+                                {/* Feature Chips */}
                                 <div className="flex flex-wrap gap-2 mb-6">
                                     {svc.features.map((f, j) => (
-                                        <span key={j} className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg">
-                                            <Check size={12} className="text-[#22C55E]" />
+                                        <span key={j}
+                                            className="inline-flex items-center gap-1.5 transition-all duration-200"
+                                            style={{ fontSize: '12px', fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.1)', padding: '6px 12px', borderRadius: '9999px' }}>
+                                            <Check size={12} strokeWidth={2.5} />
                                             {f}
                                         </span>
                                     ))}
                                 </div>
 
-                                <div className="flex items-center justify-between pt-5 border-t border-slate-100">
-                                    <div className="flex items-center gap-4 text-xs text-slate-400 font-medium">
-                                        <span className="inline-flex items-center gap-1"><Clock size={13} /> {svc.duration}</span>
-                                        <span className="inline-flex items-center gap-1"><DollarSign size={13} /> {svc.price}</span>
-                                        <span className="inline-flex items-center gap-1">
-                                            <Star size={13} className="text-amber-400 fill-amber-400" /> {svc.rating}
-                                            <span className="text-slate-300">({svc.reviews.toLocaleString()})</span>
-                                        </span>
+                                {/* Divider + Meta */}
+                                <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '16px', marginBottom: '20px' }}>
+                                    <div className="flex items-center gap-5" style={{ fontSize: '13px', color: '#94A3B8', fontWeight: 500 }}>
+                                        <span className="inline-flex items-center gap-1.5"><Clock size={14} /> {svc.duration}</span>
+                                        <span className="inline-flex items-center gap-1.5"><DollarSign size={14} /> {svc.price}</span>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3 mt-5">
-                                    <button className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#2563EB] text-white text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-sm shadow-blue-200">
+                                {/* Actions */}
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        className="flex-1 inline-flex items-center justify-center gap-2 font-semibold transition-all duration-300"
+                                        style={{ height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%)', color: '#fff', fontSize: '14px', boxShadow: '0 2px 8px rgba(37,99,235,0.25)' }}
+                                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(37,99,235,0.35)'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(37,99,235,0.25)'; }}>
                                         Book Now <ArrowRight size={14} />
                                     </button>
-                                    <button className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200">
+                                    <button
+                                        className="font-medium transition-all duration-200"
+                                        style={{ height: '48px', padding: '0 20px', borderRadius: '12px', border: '1px solid #E5E7EB', color: '#64748B', fontSize: '14px', background: 'transparent' }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.borderColor = '#CBD5E1'; e.currentTarget.style.color = '#0F172A'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.color = '#64748B'; }}>
                                         Learn More
                                     </button>
                                 </div>
@@ -267,22 +320,31 @@ export default function Services() {
             </section>
 
             {/* ───── Why Choose Us ───── */}
-            <section className="py-16 sm:py-24 bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
-                        <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight mb-4">Why Choose ABPharma</motion.h2>
-                        <motion.p variants={fadeUp} custom={1} className="text-slate-500 text-lg">Trusted by thousands of patients for reliable, professional healthcare.</motion.p>
+            <section className="bg-white">
+                <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12" style={{ paddingBlock: '80px' }}>
+                    <motion.div className="text-center max-w-2xl mx-auto mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                        <motion.h2 variants={fadeUp}
+                            style={{ fontFamily: 'Inter, system-ui, sans-serif', fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em', marginBottom: '12px' }}>
+                            Why Choose ABPharma
+                        </motion.h2>
+                        <motion.p variants={fadeUp} custom={1}
+                            style={{ fontSize: '17px', lineHeight: 1.7, color: '#64748B' }}>
+                            Trusted by thousands of patients for reliable, professional healthcare.
+                        </motion.p>
                     </motion.div>
 
-                    <motion.div className="grid md:grid-cols-3 gap-6 sm:gap-8" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                    <motion.div className="grid md:grid-cols-3 gap-8" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
                         {WHY_US.map((item, i) => (
                             <motion.div key={i} variants={fadeUp} custom={i}
-                                className="p-8 sm:p-10 rounded-[20px] bg-[#F8FAFC] border border-slate-100 text-center hover:border-blue-200 hover:shadow-md transition-all duration-300">
-                                <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-6">
-                                    <item.icon size={30} className="text-[#2563EB]" strokeWidth={1.6} />
+                                className="text-center transition-all duration-300"
+                                style={{ padding: '40px 32px', borderRadius: '20px', background: '#F8FAFC', border: '1px solid #F1F5F9' }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(37,99,235,0.15)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(15,23,42,0.06)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = '#F1F5F9'; e.currentTarget.style.boxShadow = 'none'; }}>
+                                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ background: 'rgba(37,99,235,0.06)' }}>
+                                    <item.icon size={28} className="text-[#2563EB]" strokeWidth={1.6} />
                                 </div>
-                                <h3 className="text-xl font-bold text-[#0F172A] mb-3">{item.title}</h3>
-                                <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
+                                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', marginBottom: '10px', letterSpacing: '-0.02em' }}>{item.title}</h3>
+                                <p style={{ fontSize: '14px', lineHeight: 1.7, color: '#64748B' }}>{item.desc}</p>
                             </motion.div>
                         ))}
                     </motion.div>
@@ -290,25 +352,31 @@ export default function Services() {
             </section>
 
             {/* ───── How It Works ───── */}
-            <section className="py-16 sm:py-24">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
-                        <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight mb-4">How It Works</motion.h2>
-                        <motion.p variants={fadeUp} custom={1} className="text-slate-500 text-lg">Four simple steps to get the care you need.</motion.p>
+            <section>
+                <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12" style={{ paddingBlock: '80px' }}>
+                    <motion.div className="text-center max-w-2xl mx-auto mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                        <motion.h2 variants={fadeUp}
+                            style={{ fontFamily: 'Inter, system-ui, sans-serif', fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em', marginBottom: '12px' }}>
+                            How It Works
+                        </motion.h2>
+                        <motion.p variants={fadeUp} custom={1}
+                            style={{ fontSize: '17px', lineHeight: 1.7, color: '#64748B' }}>
+                            Four simple steps to get the care you need.
+                        </motion.p>
                     </motion.div>
 
-                    <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                    <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
                         {STEPS.map((step, i) => (
                             <motion.div key={i} variants={fadeUp} custom={i} className="relative text-center">
                                 {i < STEPS.length - 1 && (
-                                    <div className="hidden lg:block absolute top-10 left-[60%] w-[80%] h-[2px] bg-slate-100 z-0" />
+                                    <div className="hidden lg:block absolute" style={{ top: '40px', left: '60%', width: '80%', height: '2px', background: '#F1F5F9', zIndex: 0 }} />
                                 )}
-                                <div className="relative z-10 w-20 h-20 rounded-[20px] bg-white border border-slate-200 flex items-center justify-center mx-auto mb-6 shadow-sm">
+                                <div className="relative z-10 mx-auto mb-6" style={{ width: '80px', height: '80px', borderRadius: '20px', background: '#fff', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(15,23,42,0.04)' }}>
                                     <step.icon size={30} className="text-[#2563EB]" strokeWidth={1.6} />
                                 </div>
-                                <div className="text-xs font-bold text-blue-500 tracking-widest mb-2">STEP {step.num}</div>
-                                <h3 className="text-lg font-bold text-[#0F172A] mb-2">{step.title}</h3>
-                                <p className="text-sm text-slate-500 leading-relaxed">{step.desc}</p>
+                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#2563EB', letterSpacing: '0.12em', marginBottom: '8px' }}>STEP {step.num}</div>
+                                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', marginBottom: '8px', letterSpacing: '-0.02em' }}>{step.title}</h3>
+                                <p style={{ fontSize: '14px', lineHeight: 1.6, color: '#64748B' }}>{step.desc}</p>
                             </motion.div>
                         ))}
                     </motion.div>
@@ -316,30 +384,39 @@ export default function Services() {
             </section>
 
             {/* ───── Testimonials ───── */}
-            <section className="py-16 sm:py-24 bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
-                        <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight mb-4">What Our Customers Say</motion.h2>
-                        <motion.p variants={fadeUp} custom={1} className="text-slate-500 text-lg">Real reviews from real customers who trust ABPharma.</motion.p>
+            <section className="bg-white">
+                <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12" style={{ paddingBlock: '80px' }}>
+                    <motion.div className="text-center max-w-2xl mx-auto mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                        <motion.h2 variants={fadeUp}
+                            style={{ fontFamily: 'Inter, system-ui, sans-serif', fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em', marginBottom: '12px' }}>
+                            What Our Customers Say
+                        </motion.h2>
+                        <motion.p variants={fadeUp} custom={1}
+                            style={{ fontSize: '17px', lineHeight: 1.7, color: '#64748B' }}>
+                            Real reviews from real customers who trust ABPharma.
+                        </motion.p>
                     </motion.div>
 
                     <motion.div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
                         {TESTIMONIALS.map((t, i) => (
                             <motion.div key={i} variants={fadeUp} custom={i}
-                                className="bg-[#F8FAFC] rounded-[20px] border border-slate-100 p-6 hover:border-blue-200 hover:shadow-md transition-all duration-300">
+                                className="transition-all duration-300"
+                                style={{ borderRadius: '20px', border: '1px solid #E5E7EB', padding: '24px', background: '#F8FAFC' }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(37,99,235,0.15)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(15,23,42,0.06)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.boxShadow = 'none'; }}>
                                 <div className="flex items-center gap-0.5 mb-4">
                                     {Array.from({ length: t.rating }).map((_, s) => (
                                         <Star key={s} size={14} className="text-amber-400 fill-amber-400" />
                                     ))}
                                 </div>
-                                <p className="text-sm text-slate-600 leading-relaxed mb-6">"{t.text}"</p>
-                                <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-                                    <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-sm font-bold text-[#2563EB]">
+                                <p style={{ fontSize: '14px', lineHeight: 1.7, color: '#475569', marginBottom: '20px' }}>"{t.text}"</p>
+                                <div className="flex items-center gap-3" style={{ borderTop: '1px solid #F1F5F9', paddingTop: '16px' }}>
+                                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.1)', fontSize: '13px', fontWeight: 700, color: '#2563EB' }}>
                                         {t.avatar}
                                     </div>
                                     <div>
-                                        <div className="text-sm font-semibold text-[#0F172A]">{t.name}</div>
-                                        <div className="text-xs text-slate-400">{t.role}</div>
+                                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{t.name}</div>
+                                        <div style={{ fontSize: '12px', color: '#94A3B8' }}>{t.role}</div>
                                     </div>
                                 </div>
                             </motion.div>
@@ -349,11 +426,17 @@ export default function Services() {
             </section>
 
             {/* ───── FAQ ───── */}
-            <section className="py-16 sm:py-24">
-                <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
-                        <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight mb-4">Frequently Asked Questions</motion.h2>
-                        <motion.p variants={fadeUp} custom={1} className="text-slate-500 text-lg">Everything you need to know about our services.</motion.p>
+            <section>
+                <div className="max-w-3xl mx-auto px-5 sm:px-8" style={{ paddingBlock: '80px' }}>
+                    <motion.div className="text-center max-w-2xl mx-auto mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                        <motion.h2 variants={fadeUp}
+                            style={{ fontFamily: 'Inter, system-ui, sans-serif', fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em', marginBottom: '12px' }}>
+                            Frequently Asked Questions
+                        </motion.h2>
+                        <motion.p variants={fadeUp} custom={1}
+                            style={{ fontSize: '17px', lineHeight: 1.7, color: '#64748B' }}>
+                            Everything you need to know about our services.
+                        </motion.p>
                     </motion.div>
 
                     <motion.div className="space-y-3" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
@@ -361,17 +444,21 @@ export default function Services() {
                             const isOpen = openFaq === i;
                             return (
                                 <motion.div key={i} variants={fadeUp} custom={i}
-                                    className={`rounded-[16px] border transition-all duration-300 ${isOpen ? 'bg-white border-blue-200 shadow-md' : 'bg-white border-slate-100 hover:border-slate-200'}`}>
+                                    className="transition-all duration-300"
+                                    style={{ borderRadius: '16px', border: isOpen ? '1px solid rgba(37,99,235,0.2)' : '1px solid #E5E7EB', background: '#fff', boxShadow: isOpen ? '0 8px 30px rgba(15,23,42,0.06)' : 'none' }}>
                                     <button onClick={() => setOpenFaq(isOpen ? null : i)}
-                                        className="w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left" aria-expanded={isOpen}>
-                                        <span className="text-sm sm:text-base font-semibold text-[#0F172A]">{faq.q}</span>
-                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${isOpen ? 'bg-blue-50 text-[#2563EB]' : 'bg-slate-50 text-slate-400'}`}>
+                                        className="w-full flex items-center justify-between gap-4 text-left"
+                                        style={{ padding: '20px 24px' }}
+                                        aria-expanded={isOpen}>
+                                        <span style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A', letterSpacing: '-0.01em' }}>{faq.q}</span>
+                                        <div className="flex-shrink-0 transition-all duration-300"
+                                            style={{ width: '32px', height: '32px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isOpen ? 'rgba(37,99,235,0.06)' : '#F8FAFC', color: isOpen ? '#2563EB' : '#94A3B8' }}>
                                             {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                         </div>
                                     </button>
                                     {isOpen && (
-                                        <div className="px-5 sm:px-6 pb-5 sm:pb-6">
-                                            <p className="text-sm text-slate-500 leading-relaxed">{faq.a}</p>
+                                        <div style={{ padding: '0 24px 20px' }}>
+                                            <p style={{ fontSize: '14px', lineHeight: 1.8, color: '#64748B' }}>{faq.a}</p>
                                         </div>
                                     )}
                                 </motion.div>
@@ -382,18 +469,29 @@ export default function Services() {
             </section>
 
             {/* ───── CTA ───── */}
-            <section className="py-16 sm:py-24">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}
-                        className="relative bg-[#2563EB] rounded-[24px] p-10 sm:p-16 lg:p-20 text-center overflow-hidden">
+            <section>
+                <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12" style={{ paddingBottom: '80px' }}>
+                    <motion.div initial={{ opacity: 0, y: 32 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                        className="relative text-center overflow-hidden"
+                        style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%)', borderRadius: '24px', padding: 'clamp(40px, 8vw, 80px)' }}>
+                        {/* Pattern */}
                         <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                        {/* Glow */}
+                        <div className="absolute" style={{ top: '-40%', right: '-10%', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', filter: 'blur(60px)', pointerEvents: 'none' }} />
+                        <div className="absolute" style={{ bottom: '-40%', left: '-10%', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(20,184,166,0.12)', filter: 'blur(60px)', pointerEvents: 'none' }} />
+
                         <div className="relative z-10 max-w-2xl mx-auto">
-                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4">
+                            <h2 style={{ fontFamily: 'Inter, system-ui, sans-serif', fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '16px' }}>
                                 Need Professional Healthcare Assistance?
                             </h2>
-                            <p className="text-blue-100 text-lg mb-8">Book your appointment today and experience the ABPharma difference.</p>
+                            <p style={{ fontSize: '17px', lineHeight: 1.7, color: 'rgba(255,255,255,0.8)', marginBottom: '32px' }}>
+                                Book your appointment today and experience the ABPharma difference.
+                            </p>
                             <Link to="/contact"
-                                className="inline-flex items-center gap-2 px-8 py-4 rounded-[14px] bg-white text-[#2563EB] font-bold text-base shadow-xl hover:bg-slate-50 transition-all duration-300 hover:-translate-y-0.5">
+                                className="inline-flex items-center gap-2.5 font-semibold transition-all duration-300"
+                                style={{ height: '52px', padding: '0 32px', borderRadius: '12px', background: '#fff', color: '#2563EB', fontSize: '15px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
+                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.2)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)'; }}>
                                 Book Appointment <ArrowRight size={18} />
                             </Link>
                         </div>
