@@ -1,397 +1,448 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiMapPin, FiPhone, FiMail, FiSend, FiArrowLeft } from 'react-icons/fi';
-import { FaTelegram } from 'react-icons/fa';
+import {
+    MapPin, Phone, Mail, MessageCircle, Send, Upload, Clock,
+    Globe, ExternalLink, ChevronDown, ChevronUp,
+    Star, ArrowRight, Shield, Zap, Award, Heart, Check, Share2, AtSign,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Link } from 'react-router-dom';
 
-const MedCross = ({ size = 20, color = '#0ea5e9', opacity = 0.12 }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} opacity={opacity}>
-        <rect x="9" y="2" width="6" height="20" rx="2" />
-        <rect x="2" y="9" width="20" height="6" rx="2" />
-    </svg>
-);
+const fadeUp = {
+    hidden: { opacity: 0, y: 24 },
+    visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.08, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] } }),
+};
 
-const Pill = ({ w = 28, h = 12, opacity = 0.1 }) => (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} opacity={opacity}>
-        <rect x="0" y="0" width={w} height={h} rx={h / 2} fill="#0ea5e9" />
-        <rect x={w / 2} y="0" width={w / 2} height={h} rx={`0 ${h / 2} ${h / 2} 0`} fill="#059669" />
-    </svg>
-);
+const stagger = { visible: { transition: { staggerChildren: 0.08 } } };
 
-const FLOATING_DECOR = [
-    { type: 'cross', x: 4, y: 10, size: 22, delay: 0, dur: 5 },
-    { type: 'cross', x: 92, y: 6, size: 18, delay: 1.2, dur: 6 },
-    { type: 'cross', x: 2, y: 82, size: 16, delay: 2, dur: 4.5 },
-    { type: 'cross', x: 96, y: 78, size: 26, delay: 0.5, dur: 7 },
-    { type: 'cross', x: 50, y: 3, size: 14, delay: 1.8, dur: 5.5 },
-    { type: 'cross', x: 12, y: 52, size: 12, delay: 3, dur: 6 },
-    { type: 'cross', x: 85, y: 45, size: 20, delay: 0.8, dur: 5 },
-    { type: 'pill', x: 8, y: 22, delay: 0.3, dur: 5 },
-    { type: 'pill', x: 80, y: 20, delay: 1.5, dur: 6.5 },
-    { type: 'pill', x: 16, y: 90, delay: 2.5, dur: 4 },
-    { type: 'pill', x: 88, y: 92, delay: 0.9, dur: 5.5 },
-    { type: 'pill', x: 55, y: 95, delay: 1.1, dur: 7 },
-    { type: 'dot', x: 30, y: 5, size: 8, delay: 0.6, dur: 4 },
-    { type: 'dot', x: 70, y: 10, size: 6, delay: 1.4, dur: 5 },
-    { type: 'dot', x: 5, y: 60, size: 10, delay: 2.2, dur: 6 },
-    { type: 'dot', x: 96, y: 55, size: 7, delay: 0.4, dur: 4.5 },
-    { type: 'dot', x: 40, y: 97, size: 9, delay: 1.7, dur: 5.5 },
-    { type: 'ring', x: 10, y: 35, size: 40, delay: 1, dur: 8 },
-    { type: 'ring', x: 82, y: 65, size: 50, delay: 2, dur: 10 },
-    { type: 'ring', x: 50, y: 90, size: 32, delay: 0.5, dur: 7 },
+const QUICK_CONTACTS = [
+    { icon: MapPin, title: 'Visit Us', detail: 'Addis Ababa, Ethiopia', sub: 'Open in Maps', color: '#2563EB', bg: '#eff6ff' },
+    { icon: Phone, title: 'Call Us', detail: '+251 901 243 826', sub: 'Available 24/7', color: '#22C55E', bg: '#f0fdf4' },
+    { icon: Mail, title: 'Email', detail: 'support@abpharma.com', sub: 'Quick Response', color: '#06B6D4', bg: '#f0fdfa' },
+    { icon: MessageCircle, title: 'Live Chat', detail: 'Chat with Pharmacist', sub: 'Avg. reply: 2 min', color: '#7c3aed', bg: '#f5f3ff' },
+];
+
+const DEPARTMENTS = ['General Inquiry', 'Prescription Support', 'Order & Delivery', 'Billing & Insurance', 'Technical Support'];
+
+const FAQS = [
+    { q: 'How do I upload a prescription?', a: 'Navigate to the prescription section, take a photo or upload an image of your prescription. Our pharmacists will review and prepare your medicines for pickup or delivery.' },
+    { q: 'How long does delivery take?', a: 'Standard delivery takes 30-60 minutes within the city. Express delivery is available for urgent orders. You can track your order in real-time through the app.' },
+    { q: 'Can I return medicines?', a: 'Unopened and sealed medicines can be returned within 24 hours with a valid receipt. Prescription medications and opened items cannot be returned for safety reasons.' },
+    { q: 'How do I contact a pharmacist?', a: 'You can reach our pharmacists via live chat, phone call, or by visiting our physical store. Our licensed pharmacists are available 24/7 for consultations.' },
+];
+
+const TESTIMONIALS = [
+    { name: 'Fatima A.', role: 'Loyal Customer', text: 'ABPharma responded to my prescription question within minutes. The pharmacist was thorough and professional. Excellent service!', rating: 5, avatar: 'F' },
+    { name: 'Daniel K.', role: 'First-time User', text: 'I was nervous about ordering medicine online, but the live chat support walked me through everything. Now I order regularly.', rating: 5, avatar: 'D' },
+    { name: 'Hana M.', role: 'Healthcare Professional', text: 'As a nurse, I appreciate the accuracy and care ABPharma puts into every order. The consultation service is genuinely helpful.', rating: 5, avatar: 'H' },
+];
+
+const WHY_CONTACT = [
+    { icon: Shield, title: 'Licensed Pharmacists', desc: 'Expert guidance from certified healthcare professionals.' },
+    { icon: Zap, title: 'Fast Response', desc: 'Average response time under 2 minutes for all inquiries.' },
+    { icon: Award, title: 'Trusted Healthcare', desc: 'HIPAA-compliant data protection and privacy standards.' },
 ];
 
 export default function Contact() {
-    const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
+    const [form, setForm] = useState({ name: '', email: '', phone: '', department: '', subject: '', message: '' });
+    const [agreed, setAgreed] = useState(false);
+    const [openFaq, setOpenFaq] = useState(null);
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (!agreed) return toast.error('Please agree to the privacy policy.');
         toast.success('Message sent! We will get back to you shortly.');
-        setForm({ name: '', email: '', subject: '', message: '' });
+        setForm({ name: '', email: '', phone: '', department: '', subject: '', message: '' });
+        setAgreed(false);
     };
 
     return (
-        <div className="relative min-h-screen pt-40 pb-32 overflow-hidden bg-slate-50">
-            {/* ETB ETB ETB  Background Gradient Blobs ETB ETB ETB  */}
-            <motion.div
-                animate={{ scale: [1, 1.15, 1], opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute top-[-8%] right-[-5%] w-[45rem] h-[45rem] bg-indigo-200/40 rounded-full mix-blend-multiply filter blur-3xl pointer-events-none"
-            />
-            <motion.div
-                animate={{ scale: [1, 1.1, 1], opacity: [0.4, 0.8, 0.4] }}
-                transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-                className="absolute bottom-[-12%] left-[-8%] w-[40rem] h-[40rem] bg-sky-200/50 rounded-full mix-blend-multiply filter blur-3xl pointer-events-none"
-            />
-            <motion.div
-                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.7, 0.3] }}
-                transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-                className="absolute top-[40%] left-[30%] w-[30rem] h-[30rem] bg-emerald-200/30 rounded-full mix-blend-multiply filter blur-3xl pointer-events-none"
-            />
+        <div className="min-h-screen bg-[#F8FAFC]">
 
-            {/* ETB ETB ETB  Floating Medical Decors ETB ETB ETB  */}
-            {FLOATING_DECOR.map((d, i) => (
-                <motion.div
-                    key={i}
-                    style={{ position: 'absolute', left: `${d.x}%`, top: `${d.y}%`, pointerEvents: 'none', zIndex: 1 }}
-                    animate={{ y: [0, -14, 0], opacity: [0.4, 0.9, 0.4] }}
-                    transition={{ duration: d.dur, delay: d.delay, repeat: Infinity, ease: 'easeInOut' }}
-                >
-                    {d.type === 'cross' && <MedCross size={d.size} opacity={0.12} />}
-                    {d.type === 'pill' && <Pill opacity={0.1} />}
-                    {d.type === 'dot' && (
-                        <div style={{
-                            width: d.size, height: d.size, borderRadius: '50%',
-                            background: i % 2 === 0 ? 'rgba(14,165,233,0.18)' : 'rgba(5,150,105,0.18)',
-                            boxShadow: i % 2 === 0 ? '0 0 12px rgba(14,165,233,0.2)' : '0 0 12px rgba(5,150,105,0.2)',
-                        }} />
-                    )}
-                    {d.type === 'ring' && (
-                        <motion.div
-                            style={{ width: d.size, height: d.size, borderRadius: '50%', border: '1.5px solid rgba(14,165,233,0.1)' }}
-                            animate={{ rotate: 360, scale: [1, 1.05, 1] }}
-                            transition={{ duration: d.dur, repeat: Infinity, ease: 'linear' }}
-                        />
-                    )}
-                </motion.div>
-            ))}
-
-            {/* ETB ETB ETB  Corner Accent Lines ETB ETB ETB  */}
-            {[
-                { top: 20, left: 20, rot: 0 },
-                { top: 20, right: 20, rot: 90 },
-                { bottom: 20, right: 20, rot: 180 },
-                { bottom: 20, left: 20, rot: 270 },
-            ].map((c, i) => (
-                <motion.div
-                    key={i}
-                    style={{
-                        position: 'absolute', top: c.top, left: c.left, right: c.right, bottom: c.bottom,
-                        width: 48, height: 48, transform: `rotate(${c.rot}deg)`, pointerEvents: 'none', zIndex: 1,
-                    }}
-                    animate={{ opacity: [0.2, 0.7, 0.2] }}
-                    transition={{ duration: 3, delay: i * 0.5, repeat: Infinity }}
-                >
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2.5px', background: 'linear-gradient(to right, #0ea5e9, transparent)', borderRadius: 2 }} />
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '2.5px', height: '100%', background: 'linear-gradient(to bottom, #0ea5e9, transparent)', borderRadius: 2 }} />
-                </motion.div>
-            ))}
-
-            {/* ETB ETB ETB  ECG / Heartbeat Strip ETB ETB ETB  */}
-            <div style={{ position: 'absolute', top: 20, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 1 }}>
-                <motion.svg width="360" height="44" viewBox="0 0 360 44" fill="none" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
-                    <motion.path
-                        d="M0,22 L90,22 L98,4 L106,40 L114,7 L122,38 L130,22 L360,22"
-                        stroke="url(#contactEcgGrad)" strokeWidth="1.2" fill="none" strokeLinecap="round"
-                        initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
-                        transition={{ duration: 2.5, ease: 'easeInOut', repeat: Infinity, repeatDelay: 2 }}
-                    />
-                    <defs>
-                        <linearGradient id="contactEcgGrad" x1="0" y1="0" x2="360" y2="0" gradientUnits="userSpaceOnUse">
-                            <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0" />
-                            <stop offset="25%" stopColor="#0ea5e9" stopOpacity="0.35" />
-                            <stop offset="55%" stopColor="#059669" stopOpacity="0.35" />
-                            <stop offset="100%" stopColor="#059669" stopOpacity="0" />
-                        </linearGradient>
-                    </defs>
-                </motion.svg>
-            </div>
-
-            {/* ETB ETB ETB  Bottom Medical Stripe ETB ETB ETB  */}
-            <motion.div
-                style={{
-                    position: 'absolute', bottom: 0, left: 0, right: 0, height: 4,
-                    background: 'linear-gradient(to right, #0ea5e9, #059669, #0ea5e9)',
-                    backgroundSize: '200% 100%', pointerEvents: 'none', zIndex: 1,
-                }}
-                animate={{ backgroundPosition: ['0% 0%', '100% 0%', '0% 0%'] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-            />
-
-            <div className="relative z-10 container mx-auto px-6 max-w-7xl">
-                {/* Back to Home Button */}
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="absolute top-0 left-6 z-50 hidden md:block"
-                >
-                    <Link to="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-full text-slate-600 font-bold shadow-[0_4px_20px_rgb(0,0,0,0.04)] hover:text-indigo-600 hover:border-indigo-200 hover:shadow-[0_8px_30px_rgb(79,70,229,0.15)] hover:-translate-x-1 transition-all duration-300">
-                        <FiArrowLeft size={18} /> Back to Home
-                    </Link>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="mb-8 md:hidden"
-                >
-                    <Link to="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-full text-slate-600 font-bold shadow-sm hover:text-indigo-600 transition-all duration-300">
-                        <FiArrowLeft size={18} /> Back to Home
-                    </Link>
-                </motion.div>
-
-                {/* Header Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="text-center max-w-3xl mx-auto mb-20"
-                >
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.2, type: 'spring', bounce: 0.4 }}
-                        className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-white/80 border border-indigo-100 shadow-sm mb-6"
-                    >
-                        <motion.span
-                            animate={{ scale: [1, 1.6, 1], opacity: [0.7, 1, 0.7] }}
-                            transition={{ duration: 1.4, repeat: Infinity }}
-                            className="w-2 h-2 rounded-full bg-indigo-500"
-                        />
-                        <span className="text-indigo-700 font-bold tracking-widest uppercase text-sm">Always Online</span>
-                    </motion.div>
-
-                    <h1 className="text-5xl md:text-6xl font-extrabold text-slate-800 mb-6 leading-tight tracking-tight">
-                        We're Here to <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 to-indigo-600">Help You</span>
-                    </h1>
-                    <p className="text-xl text-slate-600 leading-relaxed font-medium">
-                        Have questions about your medication, our premium services, or an order?
-                        Send us a message below or visit our state-of-the-art physical pharmacy.
-                    </p>
-                </motion.div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-14 container max-w-6xl mx-auto">
-                    {/* Contact Information Side */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -40 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        className="lg:col-span-1 space-y-6"
-                    >
-                        <motion.div
-                            whileHover={{ y: -4, boxShadow: '0 30px 60px rgba(79,70,229,0.35)' }}
-                            className="bg-gradient-to-br from-sky-600 via-indigo-600 to-indigo-800 rounded-3xl p-10 text-white shadow-[0_20px_40px_rgba(79,70,229,0.25)] relative overflow-hidden h-full flex flex-col justify-between"
-                        >
-                            {/* Card Decoration */}
-                            <motion.div
-                                animate={{ scale: [1, 1.2, 1], opacity: [0.08, 0.15, 0.08] }}
-                                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                                className="absolute -top-20 -right-20 w-56 h-56 bg-white/10 rounded-full blur-3xl"
-                            />
-                            <motion.div
-                                animate={{ scale: [1, 1.3, 1], opacity: [0.06, 0.12, 0.06] }}
-                                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                                className="absolute -bottom-20 -left-20 w-40 h-40 bg-sky-300/20 rounded-full blur-2xl"
-                            />
-
-                            {/* Floating mini crosses inside the card */}
-                            <motion.div style={{ position: 'absolute', top: '15%', right: '12%', pointerEvents: 'none', opacity: 0.15 }}
-                                animate={{ y: [0, -8, 0], rotate: [0, 15, 0] }}
-                                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                            >
-                                <MedCross size={16} color="white" opacity={1} />
-                            </motion.div>
-                            <motion.div style={{ position: 'absolute', bottom: '25%', right: '8%', pointerEvents: 'none', opacity: 0.1 }}
-                                animate={{ y: [0, 6, 0], rotate: [0, -10, 0] }}
-                                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
-                            >
-                                <MedCross size={12} color="white" opacity={1} />
+            {/* ───── Hero ───── */}
+            <section className="relative overflow-hidden bg-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-28">
+                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                        <motion.div initial="hidden" animate="visible" variants={stagger}>
+                            <motion.div variants={fadeUp} custom={0} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 mb-6">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                <span className="text-blue-600 text-xs font-semibold uppercase tracking-widest">Contact Us</span>
                             </motion.div>
 
-                            <div className="relative z-10">
-                                <h3 className="text-2xl font-extrabold mb-10">Contact Information</h3>
-                                <div className="space-y-10">
-                                    {[
-                                        { Icon: FiMapPin, title: 'Our Location', text: 'Addis Abeba' },
-                                        { Icon: FiPhone, title: 'Phone Number', text: '0901243826\nSupport: 24/7', highlight: true },
-                                        { Icon: FiMail, title: 'Email Address', text: 'abelzerfuone@gmail.com' },
-                                    ].map((item, i) => (
-                                        <motion.div
-                                            key={i}
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: 0.3 + i * 0.15 }}
-                                            className="flex items-start gap-5 group"
-                                        >
-                                            <motion.div
-                                                whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.3)' }}
-                                                className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300 shadow-lg"
-                                            >
-                                                <item.Icon size={24} />
-                                            </motion.div>
-                                            <div>
-                                                <h4 className="text-lg font-bold mb-1 text-white">{item.title}</h4>
-                                                <p className="text-sky-100/90 leading-relaxed whitespace-pre-line">
-                                                    {item.highlight ? (
-                                                        <>{'0901243826\n'}<span className="text-sky-300 font-semibold">Support: 24/7</span></>
-                                                    ) : item.text}
-                                                </p>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            </div>
+                            <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#0F172A] tracking-tight leading-[1.1] mb-6">
+                                We're Here to{' '}
+                                <span className="text-[#2563EB]">Help</span>
+                            </motion.h1>
+
+                            <motion.p variants={fadeUp} custom={2} className="text-lg text-slate-500 leading-relaxed max-w-xl mb-8">
+                                Need assistance with your medicines, prescriptions, healthcare services, or online orders? Our pharmacists are available every day.
+                            </motion.p>
+
+                            <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
+                                <a href="#contact-form" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-[14px] bg-[#2563EB] text-white font-semibold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                                    Contact Support <ArrowRight size={16} />
+                                </a>
+                                <a href="tel:+251901243826" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-[14px] border border-slate-200 text-[#0F172A] font-semibold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all duration-300">
+                                    <Phone size={16} /> Call Now
+                                </a>
+                            </motion.div>
                         </motion.div>
 
-                        {/* Telegram Card */}
-                        <motion.a
-                            href="https://t.me/abelzf"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.5 }}
-                            whileHover={{ y: -4, boxShadow: '0 30px 60px rgba(0,136,204,0.35)' }}
-                            className="flex items-center gap-5 bg-gradient-to-r from-[#0088cc] to-[#229ed9] rounded-3xl p-7 text-white shadow-[0_10px_30px_rgba(0,136,204,0.25)] cursor-pointer relative overflow-hidden"
-                        >
-                            <motion.div
-                                animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.2, 0.1] }}
-                                transition={{ duration: 4, repeat: Infinity }}
-                                className="absolute -top-8 -right-8 w-28 h-28 bg-white rounded-full"
-                            />
-                            <motion.div
-                                whileHover={{ rotate: [0, -10, 10, 0] }}
-                                transition={{ duration: 0.4 }}
-                                className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg"
-                            >
-                                <FaTelegram size={32} />
-                            </motion.div>
-                            <div className="relative z-10">
-                                <p className="text-xs font-bold uppercase tracking-widest text-blue-100 mb-1">Instant Consultation</p>
-                                <h3 className="text-xl font-extrabold leading-snug">Ask the Pharmacist</h3>
-                                <p className="text-blue-100 text-sm mt-1">Send us a photo of your prescription or medication. We'll reply instantly!</p>
-                            </div>
-                        </motion.a>
-                    </motion.div>
-
-                    {/* Contact Form Side */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 40 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, delay: 0.4 }}
-                        className="lg:col-span-2"
-                    >
+                        {/* Illustration */}
                         <motion.div
-                            whileHover={{ boxShadow: '0 12px 40px rgba(0,0,0,0.06)' }}
-                            className="bg-white/70 backdrop-blur-xl border border-white/80 rounded-3xl p-10 lg:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-full relative overflow-hidden"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.6, delay: 0.3 }}
+                            className="relative flex items-center justify-center"
                         >
-                            {/* Subtle inner decor */}
-                            <div className="absolute -top-24 -right-24 w-48 h-48 bg-sky-100/40 rounded-full blur-2xl pointer-events-none" />
-                            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-100/30 rounded-full blur-2xl pointer-events-none" />
+                            <div className="relative w-full max-w-lg mx-auto">
+                                <div className="absolute inset-0 m-auto w-[260px] h-[260px] sm:w-[320px] sm:h-[320px] rounded-full bg-blue-50/80 border border-blue-100/60" />
 
-                            <h2 className="text-3xl font-extrabold text-slate-800 mb-8 relative">Send us a Message</h2>
-                            <form onSubmit={handleSubmit} className="space-y-8 relative">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.5 }}
-                                        className="space-y-2"
-                                    >
-                                        <label className="text-sm font-bold text-slate-700 ml-1">Your Name</label>
-                                        <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                                            className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 transition-all text-slate-700 font-medium placeholder-slate-400 shadow-sm"
-                                            placeholder="John Doe" required />
-                                    </motion.div>
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.6 }}
-                                        className="space-y-2"
-                                    >
-                                        <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
-                                        <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
-                                            className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 transition-all text-slate-700 font-medium placeholder-slate-400 shadow-sm"
-                                            placeholder="john@example.com" required />
-                                    </motion.div>
-                                </div>
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.7 }}
-                                    className="space-y-2"
-                                >
-                                    <label className="text-sm font-bold text-slate-700 ml-1">Subject</label>
-                                    <input type="text" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
-                                        className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 transition-all text-slate-700 font-medium placeholder-slate-400 shadow-sm"
-                                        placeholder="How can we help you?" required />
-                                </motion.div>
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.8 }}
-                                    className="space-y-2"
-                                >
-                                    <label className="text-sm font-bold text-slate-700 ml-1">Message</label>
-                                    <textarea rows={5} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })}
-                                        className="w-full px-5 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 transition-all text-slate-700 font-medium placeholder-slate-400 shadow-sm resize-none"
-                                        placeholder="Write your message here..." required />
-                                </motion.div>
-                                <motion.button
-                                    type="submit"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.9 }}
-                                    whileHover={{ scale: 1.02, y: -2, boxShadow: '0 20px 40px rgba(3,105,161,0.3)' }}
-                                    whileTap={{ scale: 0.98 }}
-                                    className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-extrabold text-lg py-4 px-10 rounded-2xl shadow-[0_10px_20px_rgba(3,105,161,0.2)] transition-all duration-300 md:w-auto w-full relative overflow-hidden"
-                                >
-                                    <motion.div
-                                        style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg,transparent 35%,rgba(255,255,255,0.2) 50%,transparent 65%)' }}
-                                        animate={{ x: ['-100%', '200%'] }}
-                                        transition={{ duration: 2, repeat: Infinity, repeatDelay: 1.5 }}
-                                    />
-                                    <FiSend size={20} style={{ position: 'relative', zIndex: 1 }} />
-                                    <span style={{ position: 'relative', zIndex: 1 }}>Send Message</span>
-                                </motion.button>
-                            </form>
+                                <svg viewBox="0 0 500 420" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative z-10 w-full h-auto">
+                                    {/* Chat bubble */}
+                                    <rect x="60" y="60" width="160" height="120" rx="20" fill="#EFF6FF" stroke="#BFDBFE" strokeWidth="1.5" />
+                                    <rect x="80" y="84" width="90" height="6" rx="3" fill="#2563EB" opacity="0.2" />
+                                    <rect x="80" y="98" width="120" height="4" rx="2" fill="#E5E7EB" />
+                                    <rect x="80" y="108" width="100" height="4" rx="2" fill="#E5E7EB" />
+                                    <rect x="80" y="126" width="60" height="24" rx="12" fill="#2563EB" opacity="0.9" />
+                                    <rect x="92" y="134" width="36" height="8" rx="4" fill="white" opacity="0.9" />
+                                    {/* Medical cross */}
+                                    <rect x="300" y="40" width="120" height="120" rx="24" fill="#F0FDF4" stroke="#BBF7D0" strokeWidth="1.5" />
+                                    <rect x="340" y="55" width="40" height="90" rx="8" fill="#22C55E" opacity="0.85" />
+                                    <rect x="315" y="80" width="90" height="40" rx="8" fill="#22C55E" opacity="0.85" />
+                                    {/* Stethoscope */}
+                                    <circle cx="130" cy="300" r="50" fill="#F8FAFC" stroke="#E5E7EB" strokeWidth="1.5" />
+                                    <path d="M118 290 C118 272, 142 272, 142 290" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                                    <circle cx="130" cy="300" r="8" fill="#2563EB" opacity="0.3" />
+                                    <circle cx="130" cy="300" r="4" fill="#2563EB" />
+                                    {/* Hospital */}
+                                    <rect x="280" y="220" width="140" height="140" rx="18" fill="#FFFFFF" stroke="#E5E7EB" strokeWidth="1.5" />
+                                    <rect x="296" y="236" width="108" height="28" rx="6" fill="#2563EB" opacity="0.08" />
+                                    <rect x="330" y="228" width="40" height="16" rx="4" fill="#2563EB" opacity="0.9" />
+                                    <rect x="296" y="280" width="32" height="32" rx="6" fill="#EFF6FF" />
+                                    <rect x="336" y="280" width="32" height="32" rx="6" fill="#EFF6FF" />
+                                    <rect x="376" y="280" width="32" height="32" rx="6" fill="#EFF6FF" />
+                                    <rect x="296" y="324" width="32" height="32" rx="6" fill="#EFF6FF" />
+                                    <rect x="336" y="324" width="32" height="32" rx="6" fill="#2563EB" opacity="0.08" />
+                                    <rect x="376" y="324" width="32" height="32" rx="6" fill="#EFF6FF" />
+                                    {/* Pill */}
+                                    <ellipse cx="420" cy="320" rx="20" ry="10" fill="#F0FDF4" stroke="#BBF7D0" strokeWidth="1" transform="rotate(-30 420 320)" />
+                                    <ellipse cx="420" cy="320" rx="10" ry="10" fill="#22C55E" opacity="0.6" transform="rotate(-30 420 320)" />
+                                    {/* Dots */}
+                                    <circle cx="80" cy="200" r="4" fill="#2563EB" opacity="0.12" />
+                                    <circle cx="460" cy="160" r="3" fill="#22C55E" opacity="0.12" />
+                                </svg>
+                            </div>
                         </motion.div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ───── Quick Contact Cards ───── */}
+            <section className="py-12 sm:py-16 bg-white border-y border-slate-100">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
+                        {QUICK_CONTACTS.map((c, i) => (
+                            <motion.div key={i} variants={fadeUp} custom={i}
+                                className="bg-white rounded-[20px] border border-slate-100 p-6 hover:border-blue-200 hover:shadow-lg hover:shadow-slate-200/60 hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+                                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110" style={{ backgroundColor: c.bg }}>
+                                    <c.icon size={22} style={{ color: c.color }} strokeWidth={1.8} />
+                                </div>
+                                <h3 className="text-base font-bold text-[#0F172A] mb-1">{c.title}</h3>
+                                <p className="text-sm text-slate-600 font-medium mb-2">{c.detail}</p>
+                                <p className="text-xs font-semibold" style={{ color: c.color }}>{c.sub}</p>
+                            </motion.div>
+                        ))}
                     </motion.div>
                 </div>
-            </div>
+            </section>
+
+            {/* ───── Main Form + Info ───── */}
+            <section id="contact-form" className="py-16 sm:py-24">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid lg:grid-cols-5 gap-8 lg:gap-10">
+
+                        {/* Form */}
+                        <motion.div className="lg:col-span-3" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                            <motion.div variants={fadeUp} className="bg-white rounded-[20px] border border-slate-100 p-7 sm:p-10 shadow-sm">
+                                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] mb-2">Send us a Message</h2>
+                                <p className="text-sm text-slate-500 mb-8">Fill out the form below and our team will respond within 24 hours.</p>
+
+                                <form onSubmit={handleSubmit} className="space-y-5">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                        <div>
+                                            <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Full Name</label>
+                                            <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                                                placeholder="John Doe" required />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Email Address</label>
+                                            <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                                                placeholder="john@example.com" required />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                        <div>
+                                            <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Phone Number</label>
+                                            <input type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                                                placeholder="+251 901 243 826" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Department</label>
+                                            <select value={form.department} onChange={e => setForm({ ...form, department: e.target.value })}
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all cursor-pointer">
+                                                <option value="">Select department</option>
+                                                {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Subject</label>
+                                        <input type="text" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                                            placeholder="How can we help you?" required />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Message</label>
+                                        <textarea rows={5} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all resize-none"
+                                            placeholder="Write your message here..." required />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Upload Prescription (Optional)</label>
+                                        <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-sm font-medium text-slate-400 hover:border-blue-300 hover:text-blue-500 cursor-pointer transition-all">
+                                            <Upload size={16} />
+                                            <span>Choose file or drag & drop</span>
+                                            <input type="file" className="hidden" accept="image/*,.pdf" />
+                                        </label>
+                                    </div>
+
+                                    <label className="flex items-start gap-3 cursor-pointer group">
+                                        <div className="relative mt-0.5">
+                                            <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="sr-only peer" />
+                                            <div className="w-5 h-5 rounded-md border-2 border-slate-200 peer-checked:border-[#2563EB] peer-checked:bg-[#2563EB] transition-all flex items-center justify-center group-hover:border-slate-300">
+                                                {agreed && <Check size={12} className="text-white" strokeWidth={3} />}
+                                            </div>
+                                        </div>
+                                        <span className="text-xs text-slate-500 leading-relaxed">
+                                            I agree to the <a href="#" className="text-[#2563EB] font-semibold hover:underline">privacy policy</a> and consent to being contacted regarding my inquiry.
+                                        </span>
+                                    </label>
+
+                                    <button type="submit"
+                                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-[14px] bg-[#2563EB] text-white font-semibold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                                        <Send size={16} /> Send Message
+                                    </button>
+                                </form>
+                            </motion.div>
+                        </motion.div>
+
+                        {/* Info Sidebar */}
+                        <motion.div className="lg:col-span-2 space-y-6" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                            {/* Office Hours */}
+                            <motion.div variants={fadeUp} custom={0} className="bg-white rounded-[20px] border border-slate-100 p-7 shadow-sm">
+                                <div className="flex items-center gap-3 mb-5">
+                                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                                        <Clock size={20} className="text-[#2563EB]" strokeWidth={1.8} />
+                                    </div>
+                                    <h3 className="text-base font-bold text-[#0F172A]">Office Hours</h3>
+                                </div>
+                                <div className="space-y-3">
+                                    {[
+                                        { day: 'Monday – Friday', time: '8:00 AM – 8:00 PM' },
+                                        { day: 'Saturday', time: '9:00 AM – 6:00 PM' },
+                                        { day: 'Sunday', time: 'Emergency Only', highlight: true },
+                                    ].map((h, i) => (
+                                        <div key={i} className="flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0">
+                                            <span className="text-sm font-medium text-slate-600">{h.day}</span>
+                                            <span className={`text-sm font-semibold ${h.highlight ? 'text-amber-600' : 'text-[#0F172A]'}`}>{h.time}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </motion.div>
+
+                            {/* Emergency */}
+                            <motion.div variants={fadeUp} custom={1} className="bg-white rounded-[20px] border border-slate-100 p-7 shadow-sm">
+                                <h3 className="text-base font-bold text-[#0F172A] mb-4">Emergency Contact</h3>
+                                <div className="space-y-3">
+                                    {[
+                                        { label: 'Ambulance', value: '907', icon: Heart },
+                                        { label: 'Support', value: '+251 901 243 826', icon: Phone },
+                                        { label: 'Email', value: 'support@abpharma.com', icon: Mail },
+                                    ].map((e, i) => (
+                                        <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                                <e.icon size={15} className="text-[#2563EB]" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-xs text-slate-400 font-medium">{e.label}</div>
+                                                <div className="text-sm font-semibold text-[#0F172A] truncate">{e.value}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </motion.div>
+
+                            {/* Social */}
+                            <motion.div variants={fadeUp} custom={2} className="bg-white rounded-[20px] border border-slate-100 p-7 shadow-sm">
+                                <h3 className="text-base font-bold text-[#0F172A] mb-4">Follow Us</h3>
+                                <div className="flex flex-wrap gap-3">
+                                    {[
+                                        { icon: Globe, label: 'Facebook', color: '#1877F2' },
+                                        { icon: AtSign, label: 'Instagram', color: '#E4405F' },
+                                        { icon: MessageCircle, label: 'Telegram', color: '#0088cc' },
+                                        { icon: Share2, label: 'LinkedIn', color: '#0A66C2' },
+                                    ].map((s, i) => (
+                                        <a key={i} href="#" aria-label={s.label}
+                                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-xs font-semibold text-slate-600 hover:border-slate-200 hover:shadow-sm transition-all duration-200"
+                                            onMouseEnter={e => { e.currentTarget.style.borderColor = s.color + '40'; e.currentTarget.style.color = s.color; }}
+                                            onMouseLeave={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.color = ''; }}
+                                        >
+                                            <s.icon size={15} /> {s.label}
+                                        </a>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ───── Map ───── */}
+            <section className="py-16 sm:py-24 bg-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}
+                        className="rounded-[20px] overflow-hidden border border-slate-100 shadow-sm">
+                        <div className="bg-slate-100 h-[300px] sm:h-[400px] flex items-center justify-center relative">
+                            <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #2563EB 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                            <div className="text-center z-10">
+                                <MapPin size={40} className="text-[#2563EB] mx-auto mb-3" strokeWidth={1.5} />
+                                <p className="text-lg font-bold text-[#0F172A] mb-1">ABPharma Headquarters</p>
+                                <p className="text-sm text-slate-500">Addis Ababa, Ethiopia</p>
+                                <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-[#2563EB] hover:underline">
+                                    Open in Google Maps <ExternalLink size={13} />
+                                </a>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* ───── Why Contact ───── */}
+            <section className="py-16 sm:py-24">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <motion.div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                        <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight mb-4">Why Contact ABPharma</motion.h2>
+                        <motion.p variants={fadeUp} custom={1} className="text-slate-500 text-lg">Trusted by thousands for reliable, professional healthcare support.</motion.p>
+                    </motion.div>
+
+                    <motion.div className="grid md:grid-cols-3 gap-6 sm:gap-8" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                        {WHY_CONTACT.map((item, i) => (
+                            <motion.div key={i} variants={fadeUp} custom={i}
+                                className="p-8 sm:p-10 rounded-[20px] bg-white border border-slate-100 text-center hover:border-blue-200 hover:shadow-md transition-all duration-300">
+                                <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-6">
+                                    <item.icon size={30} className="text-[#2563EB]" strokeWidth={1.6} />
+                                </div>
+                                <h3 className="text-xl font-bold text-[#0F172A] mb-3">{item.title}</h3>
+                                <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* ───── FAQ ───── */}
+            <section className="py-16 sm:py-24 bg-white">
+                <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <motion.div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                        <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight mb-4">Frequently Asked Questions</motion.h2>
+                        <motion.p variants={fadeUp} custom={1} className="text-slate-500 text-lg">Quick answers to common questions.</motion.p>
+                    </motion.div>
+
+                    <motion.div className="space-y-3" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                        {FAQS.map((faq, i) => {
+                            const isOpen = openFaq === i;
+                            return (
+                                <motion.div key={i} variants={fadeUp} custom={i}
+                                    className={`rounded-[16px] border transition-all duration-300 ${isOpen ? 'bg-white border-blue-200 shadow-md' : 'bg-white border-slate-100 hover:border-slate-200'}`}>
+                                    <button onClick={() => setOpenFaq(isOpen ? null : i)}
+                                        className="w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left" aria-expanded={isOpen}>
+                                        <span className="text-sm sm:text-base font-semibold text-[#0F172A]">{faq.q}</span>
+                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${isOpen ? 'bg-blue-50 text-[#2563EB]' : 'bg-slate-50 text-slate-400'}`}>
+                                            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                        </div>
+                                    </button>
+                                    {isOpen && (
+                                        <div className="px-5 sm:px-6 pb-5 sm:pb-6">
+                                            <p className="text-sm text-slate-500 leading-relaxed">{faq.a}</p>
+                                        </div>
+                                    )}
+                                </motion.div>
+                            );
+                        })}
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* ───── Testimonials ───── */}
+            <section className="py-16 sm:py-24">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <motion.div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                        <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight mb-4">What Customers Say</motion.h2>
+                        <motion.p variants={fadeUp} custom={1} className="text-slate-500 text-lg">Real feedback from real customers.</motion.p>
+                    </motion.div>
+
+                    <motion.div className="grid sm:grid-cols-3 gap-6" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
+                        {TESTIMONIALS.map((t, i) => (
+                            <motion.div key={i} variants={fadeUp} custom={i}
+                                className="bg-white rounded-[20px] border border-slate-100 p-7 hover:border-blue-200 hover:shadow-md transition-all duration-300">
+                                <div className="flex items-center gap-0.5 mb-4">
+                                    {Array.from({ length: t.rating }).map((_, s) => (
+                                        <Star key={s} size={14} className="text-amber-400 fill-amber-400" />
+                                    ))}
+                                </div>
+                                <p className="text-sm text-slate-600 leading-relaxed mb-6">"{t.text}"</p>
+                                <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
+                                    <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-sm font-bold text-[#2563EB]">
+                                        {t.avatar}
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-semibold text-[#0F172A]">{t.name}</div>
+                                        <div className="text-xs text-slate-400">{t.role}</div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* ───── Newsletter ───── */}
+            <section className="py-16 sm:py-24 bg-white">
+                <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
+                        <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0F172A] tracking-tight mb-3">Stay Updated</h2>
+                        <p className="text-slate-500 text-lg mb-8">Subscribe to receive health tips, promotions, and pharmacy updates.</p>
+                        <form onSubmit={e => { e.preventDefault(); toast.success('Subscribed successfully!'); }}
+                            className="flex flex-col sm:flex-row items-center gap-3 max-w-lg mx-auto">
+                            <input type="email" placeholder="Enter your email"
+                                className="flex-1 w-full px-5 py-3.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                                required />
+                            <button type="submit"
+                                className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-[#2563EB] text-white font-semibold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all duration-300">
+                                Subscribe
+                            </button>
+                        </form>
+                    </motion.div>
+                </div>
+            </section>
         </div>
     );
 }
