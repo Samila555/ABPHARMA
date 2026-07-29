@@ -19,6 +19,7 @@ export default function Medicines() {
     const [importing, setImporting] = useState(false);
     const [previewData, setPreviewData] = useState(null);
     const [previewHeaders, setPreviewHeaders] = useState([]);
+    const [columnMap, setColumnMap] = useState({});
     const navigate = useNavigate();
     const searchRef = useRef();
     const fileRef = useRef();
@@ -41,6 +42,21 @@ export default function Medicines() {
     useEffect(() => { fetchMedicines(); }, [filters.page, filters.status, filters.category_id, filters.low_stock, filters.expiring_soon]);
 
     const handleSearch = (e) => { e.preventDefault(); setFilters(f => ({ ...f, page: 1 })); fetchMedicines(); };
+
+    const MAP_FIELDS = [
+        { key: 'name', label: 'Medicine Name', required: true },
+        { key: 'brand_name', label: 'Brand Name' },
+        { key: 'generic_name', label: 'Generic Name' },
+        { key: 'barcode', label: 'Barcode' },
+        { key: 'category_id', label: 'Category' },
+        { key: 'supplier_id', label: 'Supplier' },
+        { key: 'purchase_price', label: 'Purchase Price' },
+        { key: 'selling_price', label: 'Selling Price' },
+        { key: 'quantity', label: 'Quantity (Stock)' },
+        { key: 'min_stock_level', label: 'Min Stock Level' },
+        { key: 'expiry_date', label: 'Expiry Date (YYYY-MM-DD)' },
+        { key: 'description', label: 'Description' }
+    ];
 
     const handleFileSelect = async (e) => {
         const file = e.target.files[0];
@@ -68,6 +84,27 @@ export default function Medicines() {
             const headers = Array.from(new Set(jsonData.flatMap(Object.keys)));
             setPreviewHeaders(headers);
             setPreviewData(jsonData);
+
+            // Auto mapping
+            const autoMap = {};
+            MAP_FIELDS.forEach(field => {
+                const match = headers.find(h => h.toLowerCase().replace(/[^a-z0-9]/g, '') === field.key.toLowerCase().replace(/[^a-z0-9]/g, ''));
+                if (match) autoMap[field.key] = match;
+            });
+            // Try to auto-map 'name' more aggressively
+            if (!autoMap.name) {
+                const nameMatch = headers.find(h => /name|medicine|product|item/i.test(h));
+                if (nameMatch) autoMap.name = nameMatch;
+            }
+            if (!autoMap.purchase_price) {
+                const costMatch = headers.find(h => /cost|purchase/i.test(h));
+                if (costMatch) autoMap.purchase_price = costMatch;
+            }
+            if (!autoMap.selling_price) {
+                const priceMatch = headers.find(h => /price|selling|retail/i.test(h));
+                if (priceMatch) autoMap.selling_price = priceMatch;
+            }
+            setColumnMap(autoMap);
         } catch (error) {
             console.error('File read error:', error);
             toast.error('Failed to parse file. Please check file format.');
@@ -78,9 +115,24 @@ export default function Medicines() {
 
     const confirmImport = async () => {
         if (!previewData) return;
+        if (!columnMap.name) {
+            toast.error("Please map the Medicine Name column before importing.");
+            return;
+        }
+
+        const mappedData = previewData.map(row => {
+            const newRow = { ...row }; // keep original keys just in case
+            Object.entries(columnMap).forEach(([sysKey, excelKey]) => {
+                if (excelKey && row[excelKey] !== undefined) {
+                    newRow[sysKey] = row[excelKey];
+                }
+            });
+            return newRow;
+        });
+
         setImporting(true);
         try {
-            const res = await api.post('/medicines/import', { medicines: previewData });
+            const res = await api.post('/medicines/import', { medicines: mappedData });
             if (res.data.errors && res.data.errors.length > 0) {
                 toast.success(`Imported ${res.data.count} medicines (${res.data.errors.length} failed: ${res.data.errors.map(e => e.name).join(', ')})`);
             } else {
@@ -126,12 +178,37 @@ export default function Medicines() {
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
                         <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                             <div>
-                                <h3 className="text-xl font-bold text-slate-800">Preview Excel Import</h3>
-                                <p className="text-sm text-slate-500 mt-1">{previewData.length} records parsed from file. Please verify columns before importing.</p>
+                                <h3 className="text-xl font-bold text-slate-800">Map & Preview Excel Import</h3>
+                                <p className="text-sm text-slate-500 mt-1">{previewData.length} records parsed from file. Please map the columns accurately.</p>
                             </div>
                             <button onClick={() => setPreviewData(null)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                                 <FiX size={24} />
                             </button>
+                        </div>
+
+                        <div className="p-5 border-b border-slate-200 bg-white">
+                            <h4 className="font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                                <FiFilter className="text-sky-500" /> Map Columns
+                            </h4>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
+                                {MAP_FIELDS.map(f => (
+                                    <div key={f.key} className="flex flex-col gap-1.5">
+                                        <label className="text-xs font-semibold text-slate-600 flex justify-between">
+                                            <span>{f.label} {f.required && <span className="text-red-500">*</span>}</span>
+                                        </label>
+                                        <select
+                                            className={`form-input text-sm py-1.5 ${f.required && !columnMap[f.key] ? 'border-red-300 bg-red-50' : 'border-slate-200'}`}
+                                            value={columnMap[f.key] || ''}
+                                            onChange={(e) => setColumnMap(prev => ({ ...prev, [f.key]: e.target.value }))}
+                                        >
+                                            <option value="">-- Ignore --</option>
+                                            {previewHeaders.map(h => (
+                                                <option key={h} value={h}>{h}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
 
                         <div className="flex-1 overflow-auto p-0 bg-slate-50">
