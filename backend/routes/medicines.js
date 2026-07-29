@@ -223,26 +223,38 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
 
         let count = 0;
         const errors = [];
-        for (const item of medicines) {
-            const name = item.name || item.Name || item.NAME;
-            if (!name) continue;
+        for (const rawItem of medicines) {
+            // Normalize keys to handle spaces, different cases, and formatting issues
+            const item = {};
+            for (const key in rawItem) {
+                const cleanKey = key.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+                item[cleanKey] = rawItem[key];
+            }
 
-            const brand_name = item.brand_name || item.Brand || item.brand || '';
-            const generic_name = item.generic_name || item.Generic || item.generic || '';
-            const barcode = item.barcode || item.Barcode || '';
-            const selling_price = parseFloat(item.selling_price || item.Price || item.price || 0) || 0;
-            const purchase_price = parseFloat(item.purchase_price || item.Cost || item.cost || 0) || 0;
-            const quantity = parseInt(item.quantity || item.Quantity || item.Stock || item.stock || 0, 10) || 0;
-            const min_stock_level = parseInt(item.min_stock_level || item.MinStock || 10, 10) || 10;
-            const description = item.description || item.Description || '';
-            const strength = item.strength || item.Strength || '';
-            const dosage_form = item.dosage_form || item.form || item.Form || 'Tablet';
-            const unit = item.unit || item.Unit || 'Piece';
-            const image = item.image || item.Image || item.IMAGE || item.image_url || item.imageUrl || '';
+            const name = item.name || item.medicine_name || item.medicine || item.product_name || item.product || rawItem.name || rawItem.Name || rawItem.NAME;
+            if (!name || String(name).trim() === '') {
+                if (Object.keys(rawItem).length > 0) {
+                    errors.push({ name: 'Unknown Row', error: 'Missing medicine name column' });
+                }
+                continue;
+            }
+
+            const brand_name = item.brand_name || item.brand || rawItem.brand_name || rawItem.Brand || '';
+            const generic_name = item.generic_name || item.generic || rawItem.generic_name || rawItem.Generic || '';
+            const barcode = item.barcode || item.codigo || rawItem.barcode || rawItem.Barcode || '';
+            const selling_price = parseFloat(item.selling_price || item.price || item.retail_price || rawItem.selling_price || rawItem.Price || 0) || 0;
+            const purchase_price = parseFloat(item.purchase_price || item.cost || item.cost_price || rawItem.purchase_price || rawItem.Cost || 0) || 0;
+            const quantity = parseInt(item.quantity || item.qty || item.stock || item.inventory || rawItem.quantity || rawItem.Quantity || 0, 10) || 0;
+            const min_stock_level = parseInt(item.min_stock_level || item.min_stock || item.reorder_level || rawItem.min_stock_level || rawItem.MinStock || 10, 10) || 10;
+            const description = item.description || item.desc || rawItem.description || rawItem.Description || '';
+            const strength = item.strength || item.potency || rawItem.strength || rawItem.Strength || '';
+            const dosage_form = item.dosage_form || item.form || item.dosage || rawItem.dosage_form || rawItem.Form || 'Tablet';
+            const unit = item.unit || item.uom || rawItem.unit || rawItem.Unit || 'Piece';
+            const image = item.image || item.image_url || item.picture || item.photo || rawItem.image || rawItem.Image || '';
 
             // Resolve category: accept numeric ID or category name
             let category_id = null;
-            const catRaw = item.category_id || item.Category || item.category || item.category_name;
+            const catRaw = item.category_id || item.category || item.category_name || rawItem.category_id || rawItem.Category;
             if (catRaw !== undefined && catRaw !== null && catRaw !== '') {
                 const catNum = parseInt(catRaw, 10);
                 if (!isNaN(catNum) && catByName[String(catNum)] !== undefined) {
@@ -268,7 +280,7 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
 
             // Resolve supplier: accept numeric ID or supplier name
             let supplier_id = null;
-            const supRaw = item.supplier_id || item.Supplier || item.supplier || item.supplier_name;
+            const supRaw = item.supplier_id || item.supplier || item.supplier_name || rawItem.supplier_id || rawItem.Supplier;
             if (supRaw !== undefined && supRaw !== null && supRaw !== '') {
                 const supNum = parseInt(supRaw, 10);
                 if (!isNaN(supNum) && supByName[String(supNum)] !== undefined) {
