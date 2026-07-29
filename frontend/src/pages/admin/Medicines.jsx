@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiFilter, FiDownload, FiAlertTriangle, FiPackage } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiFilter, FiDownload, FiAlertTriangle, FiPackage, FiX, FiCheck } from 'react-icons/fi';
 import { MdQrCode } from 'react-icons/md';
 import api, { getImageUrl } from '../../lib/api';
 import MedicineImage from '../../components/MedicineImage';
@@ -17,6 +17,8 @@ export default function Medicines() {
     const [filters, setFilters] = useState({ search: '', category_id: '', status: '', low_stock: '', expiring_soon: '', page: 1, limit: 20 });
     const [categories, setCategories] = useState([]);
     const [importing, setImporting] = useState(false);
+    const [previewData, setPreviewData] = useState(null);
+    const [previewHeaders, setPreviewHeaders] = useState([]);
     const navigate = useNavigate();
     const searchRef = useRef();
     const fileRef = useRef();
@@ -40,7 +42,7 @@ export default function Medicines() {
 
     const handleSearch = (e) => { e.preventDefault(); setFilters(f => ({ ...f, page: 1 })); fetchMedicines(); };
 
-    const handleImport = async (e) => {
+    const handleFileSelect = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
@@ -51,7 +53,6 @@ export default function Medicines() {
             return;
         }
 
-        setImporting(true);
         try {
             const data = await file.arrayBuffer();
             const workbook = XLSX.read(data);
@@ -60,24 +61,38 @@ export default function Medicines() {
 
             if (jsonData.length === 0) {
                 toast.error('The uploaded file is empty or formatted incorrectly.');
-                setImporting(false);
                 e.target.value = null;
                 return;
             }
 
-            const res = await api.post('/medicines/import', { medicines: jsonData });
+            const headers = Array.from(new Set(jsonData.flatMap(Object.keys)));
+            setPreviewHeaders(headers);
+            setPreviewData(jsonData);
+        } catch (error) {
+            console.error('File read error:', error);
+            toast.error('Failed to parse file. Please check file format.');
+        } finally {
+            e.target.value = null;
+        }
+    };
+
+    const confirmImport = async () => {
+        if (!previewData) return;
+        setImporting(true);
+        try {
+            const res = await api.post('/medicines/import', { medicines: previewData });
             if (res.data.errors && res.data.errors.length > 0) {
                 toast.success(`Imported ${res.data.count} medicines (${res.data.errors.length} failed: ${res.data.errors.map(e => e.name).join(', ')})`);
             } else {
                 toast.success(`Imported ${res.data.count} medicines successfully!`);
             }
             fetchMedicines();
+            setPreviewData(null);
         } catch (error) {
             console.error('Import error:', error);
-            toast.error(error.response?.data?.message || 'Failed to import medicines. Please check file format.');
+            toast.error(error.response?.data?.message || 'Failed to import medicines.');
         } finally {
             setImporting(false);
-            e.target.value = null;
         }
     };
 
@@ -105,6 +120,58 @@ export default function Medicines() {
 
     return (
         <div className="space-y-5">
+            {/* Import Preview Modal */}
+            {previewData && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+                        <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-800">Preview Excel Import</h3>
+                                <p className="text-sm text-slate-500 mt-1">{previewData.length} records parsed from file. Please verify columns before importing.</p>
+                            </div>
+                            <button onClick={() => setPreviewData(null)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                <FiX size={24} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-auto p-0 bg-slate-50">
+                            <table className="w-full text-sm text-left border-collapse">
+                                <thead className="text-xs uppercase bg-slate-200 text-slate-600 sticky top-0 shadow-sm z-10">
+                                    <tr>
+                                        {previewHeaders.map(h => (
+                                            <th key={h} className="px-5 py-3 font-semibold border-b border-slate-300 whitespace-nowrap">{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {previewData.slice(0, 30).map((row, idx) => (
+                                        <tr key={idx} className="border-b border-slate-200 bg-white hover:bg-sky-50 transition-colors">
+                                            {previewHeaders.map(h => (
+                                                <td key={h} className="px-5 py-2 whitespace-nowrap truncate max-w-[200px]" title={row[h]}>
+                                                    {row[h] !== undefined && row[h] !== null ? String(row[h]) : '-'}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {previewData.length > 30 && (
+                                <div className="text-center py-3 text-sm font-medium text-amber-700 bg-amber-50 border-t border-amber-100">
+                                    Showing first 30 rows. {previewData.length - 30} more rows are hidden but will be imported.
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-5 border-t border-slate-200 flex justify-end gap-3 bg-slate-50/50">
+                            <button onClick={() => setPreviewData(null)} className="btn-outline px-6">Cancel</button>
+                            <button onClick={confirmImport} disabled={importing} className="btn-primary px-6 flex items-center gap-2">
+                                {importing ? 'Importing...' : <><FiCheck size={18} /> Confirm & Import All</>}
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
@@ -119,7 +186,7 @@ export default function Medicines() {
                     <button onClick={handleDownloadTemplate} className="btn-outline text-sm py-2 text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100">
                         <FiDownload size={14} /> Template
                     </button>
-                    <input type="file" ref={fileRef} className="hidden" accept=".xlsx,.xls,.csv" onChange={handleImport} />
+                    <input type="file" ref={fileRef} className="hidden" accept=".xlsx,.xls,.csv" onChange={handleFileSelect} />
                     <button onClick={() => fileRef.current?.click()} disabled={importing} className="btn-outline text-sm py-2 text-sky-600 border-sky-200 bg-sky-50 hover:bg-sky-100">
                         <FiPlus size={14} /> {importing ? 'Importing...' : 'Import Excel'}
                     </button>
