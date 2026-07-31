@@ -18,11 +18,20 @@ export default function POS() {
     const [paymentMethod, setPaymentMethod] = useState('cash');
     const [amountPaid, setAmountPaid] = useState('');
     const [loading, setLoading] = useState(false);
-    const [showPending, setShowPending] = useState(false);
+
+    // Modes: 'walkin' or 'online'
+    const [activeTab, setActiveTab] = useState('walkin');
+
     const [pendingOrders, setPendingOrders] = useState([]);
     const [loadingPending, setLoadingPending] = useState(false);
     const [verifyingOrder, setVerifyingOrder] = useState(null);
     const searchRef = useRef();
+
+    useEffect(() => {
+        if (activeTab === 'online') {
+            fetchPendingOrders();
+        }
+    }, [activeTab]);
 
     const fetchPendingOrders = async () => {
         setLoadingPending(true);
@@ -39,6 +48,7 @@ export default function POS() {
             await api.patch(`/orders/${orderId}/approve`);
             toast.success('Payment verified and stock deducted!');
             fetchPendingOrders();
+            fetchMedicines();
         } catch (e) {
             toast.error(e.response?.data?.message || 'Verification failed');
         }
@@ -154,224 +164,273 @@ export default function POS() {
     };
 
     return (
-        <div className="flex gap-4 h-[calc(100vh-120px)]">
-            {showPending && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowPending(false)}>
-                    <div className="bg-white rounded-2xl w-full max-w-3xl p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold flex items-center gap-2"><FiUserCheck className="text-amber-500" /> Verify Online Bank Transfers</h2>
-                            <button onClick={() => setShowPending(false)} className="text-slate-400 hover:text-slate-600"><FiX size={24} /></button>
-                        </div>
-                        {loadingPending ? <div className="p-8 text-center"><div className="w-8 h-8 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin mx-auto" /></div> :
-                            pendingOrders.length === 0 ? <p className="text-center text-slate-500 py-8">No pending online transfers to verify.</p> : (
-                                <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
-                                    {pendingOrders.map(o => (
-                                        <div key={o.id} className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm flex flex-col md:flex-row gap-6">
-                                            <div className="flex-1">
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <div>
-                                                        <div className="font-bold text-lg text-slate-800">{o.order_number}</div>
-                                                        <div className="text-sm text-slate-500">{o.customer_name} • {o.customer_phone}</div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="font-bold text-xl text-sky-600">ETB {parseFloat(o.total).toLocaleString()}</div>
-                                                        <div className="text-xs font-semibold text-amber-500 bg-amber-50 px-2 py-1 rounded inline-block mt-1">Awaiting Verification</div>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    disabled={verifyingOrder === o.id}
-                                                    onClick={() => verifyOnlineOrder(o.id)}
-                                                    className="w-full mt-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
-                                                >
-                                                    {verifyingOrder === o.id ? 'Verifying...' : 'Verify Transfer & Deduct Stock'}
-                                                </button>
-                                            </div>
-                                            <div className="w-full md:w-64 bg-slate-50 rounded-xl border border-dashed border-slate-300 p-2 flex items-center justify-center">
-                                                {o.payment_screenshot ? (
-                                                    <a href={o.payment_screenshot.startsWith('/') ? o.payment_screenshot : `/${o.payment_screenshot}`} target="_blank" rel="noreferrer">
-                                                        <img src={o.payment_screenshot.startsWith('/') ? o.payment_screenshot : `/${o.payment_screenshot}`} alt="Payment Proof" className="max-h-48 rounded object-cover cursor-pointer hover:opacity-90" />
-                                                    </a>
-                                                ) : (
-                                                    <span className="text-slate-400 text-sm">No Screenshot Provided</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                    </div>
-                </div>
-            )}
+        <div className="flex flex-col gap-4 h-[calc(100vh-100px)]">
 
-            <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
-                        <MdPointOfSale className="text-sky-500" size={32} />
-                        AB Pharma POS
-                    </h1>
-                    <div className="flex gap-3">
-                        <button onClick={() => { fetchPendingOrders(); setShowPending(true); }} className="px-4 py-2 rounded-lg border border-amber-300 text-amber-600 hover:bg-amber-50 flex items-center gap-2">
-                            <FiUserCheck /> Verify Online Transfers
-                            {pendingOrders.length > 0 && <span className="bg-red-500 text-white rounded-full px-2 py-0.5 text-xs">{pendingOrders.length}</span>}
-                        </button>
-                    </div>
-                </div>
-
-                <div className="card p-3">
-                    <div className="relative">
-                        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                        <input ref={searchRef} type="text" placeholder="Search medicine..."
-                            value={search} onChange={e => setSearch(e.target.value)}
-                            className="form-input pl-10" autoFocus />
-                    </div>
-                    {results.length > 0 && (
-                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                            {results.map(m => (
-                                <button key={m.id} onClick={() => addToCart(m)}
-                                    className={`flex items-center gap-3 p-3 border rounded-xl text-left transition-all ${m.quantity <= 0 ? 'opacity-50 cursor-not-allowed border-slate-200' : 'border-slate-200 hover:border-sky-400 hover:bg-sky-50'}`}
-                                    disabled={m.quantity <= 0}>
-                                    <div className="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center text-sky-600 font-bold text-sm flex-shrink-0">
-                                        {m.name.charAt(0)}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-sm text-slate-800 truncate">{m.name}</div>
-                                        <div className="text-xs text-slate-500">{m.strength} ETB Stock: {m.quantity}</div>
-                                    </div>
-                                    <div className="text-right flex-shrink-0">
-                                        <div className="text-sm font-bold text-green-600">ETB {parseFloat(m.selling_price).toLocaleString()}</div>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                <div className="card flex-1 overflow-hidden flex flex-col">
-                    <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                        <h3 className="font-semibold text-slate-800">Cart ({cart.length} items)</h3>
-                        {cart.length > 0 && <button onClick={() => setCart([])} className="text-sm text-red-500 hover:text-red-700">Clear All</button>}
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                        <AnimatePresence>
-                            {cart.map(item => (
-                                <motion.div key={item.medicine_id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
-                                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-sm text-slate-800 truncate">{item.medicine_name}</div>
-                                        <div className="text-xs text-slate-500">ETB {item.unit_price.toLocaleString()} each</div>
-                                    </div>
-                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                        <button onClick={() => updateQty(item.medicine_id, item.quantity - 1)} className="w-7 h-7 bg-slate-200 rounded-lg flex items-center justify-center"><FiMinus size={12} /></button>
-                                        <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
-                                        <button onClick={() => updateQty(item.medicine_id, item.quantity + 1)} className="w-7 h-7 bg-slate-200 rounded-lg flex items-center justify-center"><FiPlus size={12} /></button>
-                                    </div>
-                                    <div className="text-right font-bold text-sm">ETB {(item.unit_price * item.quantity).toLocaleString()}</div>
-                                    <button onClick={() => removeItem(item.medicine_id)} className="text-red-400"><FiTrash2 size={14} /></button>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                    </div>
+            {/* Header with Mode Toggles */}
+            <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl shadow-sm border border-slate-200">
+                <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                    <MdPointOfSale className="text-sky-600" size={32} />
+                    AB Pharma POS Center
+                </h1>
+                <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                    <button
+                        onClick={() => setActiveTab('walkin')}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold transition-all ${activeTab === 'walkin' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        <MdPointOfSale size={20} />
+                        Walk-In Register
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('online')}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold transition-all relative ${activeTab === 'online' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        <FiUserCheck size={20} />
+                        Online Orders Verification
+                        {activeTab === 'walkin' && pendingOrders.length > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs animate-bounce border-2 border-white">{pendingOrders.length}</span>
+                        )}
+                    </button>
                 </div>
             </div>
 
-            <div className="w-80 flex flex-col gap-4">
-                <div className="card p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                        <FiUser size={15} className="text-slate-500" />
-                        <h3 className="font-semibold text-slate-700 text-sm">Customer (Optional)</h3>
-                    </div>
-                    {customer ? (
-                        <div className="flex items-center gap-2 bg-sky-50 border border-sky-200 rounded-lg p-2.5">
-                            <div className="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center text-sky-700 font-bold text-sm">
-                                {customer.name.charAt(0)}
+            {/* MAIN CONTENT AREA */}
+            {activeTab === 'walkin' ? (
+                <div className="flex gap-4 flex-1 overflow-hidden">
+                    {/* Left - Product Search */}
+                    <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+
+                        <div className="card p-3">
+                            <div className="relative">
+                                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                <input ref={searchRef} type="text" placeholder="Search medicine..."
+                                    value={search} onChange={e => setSearch(e.target.value)}
+                                    className="form-input pl-10" autoFocus />
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="font-semibold text-sm text-slate-800">{customer.name}</div>
-                                <div className="text-xs text-slate-500">{customer.phone}</div>
-                            </div>
-                            <button onClick={() => setCustomer(null)} className="text-slate-400 hover:text-red-500"><FiX /> </button>
-                        </div>
-                    ) : (
-                        <div className="relative">
-                            <input type="text" placeholder="Search customer name or phone..."
-                                value={customerSearch} onChange={e => setCustomerSearch(e.target.value)}
-                                className="form-input text-sm" />
-                            {customers.length > 0 && (
-                                <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-20">
-                                    {customers.map(c => (
-                                        <button key={c.id} onClick={() => { setCustomer(c); setCustomerSearch(''); setCustomers([]); }}
-                                            className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 text-left">
-                                            <div className="w-7 h-7 bg-sky-100 rounded-full flex items-center justify-center text-sky-700 font-bold text-xs">{c.name.charAt(0)}</div>
-                                            <div><div className="text-sm font-medium">{c.name}</div><div className="text-xs text-slate-400">{c.phone}</div></div>
+                            {results.length > 0 && (
+                                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                                    {results.map(m => (
+                                        <button key={m.id} onClick={() => addToCart(m)}
+                                            className={`flex items-center gap-3 p-3 border rounded-xl text-left transition-all ${m.quantity <= 0 ? 'opacity-50 cursor-not-allowed border-slate-200' : 'border-slate-200 hover:border-sky-400 hover:bg-sky-50'}`}
+                                            disabled={m.quantity <= 0}>
+                                            <div className="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center text-sky-600 font-bold text-sm flex-shrink-0">
+                                                {m.name.charAt(0)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-medium text-sm text-slate-800 truncate">{m.name}</div>
+                                                <div className="text-xs text-slate-500">{m.strength} ETB Stock: {m.quantity}</div>
+                                            </div>
+                                            <div className="text-right flex-shrink-0">
+                                                <div className="text-sm font-bold text-green-600">ETB {parseFloat(m.selling_price).toLocaleString()}</div>
+                                            </div>
                                         </button>
                                     ))}
                                 </div>
                             )}
                         </div>
-                    )}
-                </div>
 
-                {/* Discount & Tax */}
-                <div className="card p-4 space-y-3">
-                    <div className="flex gap-2">
-                        <div className="flex-1">
-                            <label className="form-label text-xs">Discount</label>
-                            <input type="number" min="0" value={discount} onChange={e => setDiscount(e.target.value)} className="form-input text-sm" placeholder="0" />
-                        </div>
-                        <div>
-                            <label className="form-label text-xs">Type</label>
-                            <select value={discountType} onChange={e => setDiscountType(e.target.value)} className="form-input text-sm w-28">
-                                <option value="fixed">ETB  Fixed</option>
-                                <option value="percentage">% Percent</option>
-                            </select>
+                        <div className="card flex-1 overflow-hidden flex flex-col">
+                            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                                <h3 className="font-semibold text-slate-800">Cart ({cart.length} items)</h3>
+                                {cart.length > 0 && <button onClick={() => setCart([])} className="text-sm text-red-500 hover:text-red-700">Clear All</button>}
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                                <AnimatePresence>
+                                    {cart.map(item => (
+                                        <motion.div key={item.medicine_id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
+                                            className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-medium text-sm text-slate-800 truncate">{item.medicine_name}</div>
+                                                <div className="text-xs text-slate-500">ETB {item.unit_price.toLocaleString()} each</div>
+                                            </div>
+                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                                <button onClick={() => updateQty(item.medicine_id, item.quantity - 1)} className="w-7 h-7 bg-slate-200 rounded-lg flex items-center justify-center"><FiMinus size={12} /></button>
+                                                <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
+                                                <button onClick={() => updateQty(item.medicine_id, item.quantity + 1)} className="w-7 h-7 bg-slate-200 rounded-lg flex items-center justify-center"><FiPlus size={12} /></button>
+                                            </div>
+                                            <div className="text-right font-bold text-sm">ETB {(item.unit_price * item.quantity).toLocaleString()}</div>
+                                            <button onClick={() => removeItem(item.medicine_id)} className="text-red-400"><FiTrash2 size={14} /></button>
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <label className="form-label text-xs">Tax Rate (%)</label>
-                        <input type="number" min="0" max="100" value={taxRate} onChange={e => setTaxRate(e.target.value)} className="form-input text-sm" placeholder="0" />
-                    </div>
-                </div>
 
-                {/* Summary */}
-                <div className="card p-4 space-y-2">
-                    <div className="flex justify-between text-sm text-slate-600"><span>Subtotal</span><span className="font-medium">{fmt(subtotal)}</span></div>
-                    {discountAmt > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{fmt(discountAmt)}</span></div>}
-                    {taxAmt > 0 && <div className="flex justify-between text-sm text-slate-600"><span>Tax ({taxRate}%)</span><span>+{fmt(taxAmt)}</span></div>}
-                    <div className="border-t border-slate-200 pt-2 flex justify-between text-lg font-bold text-slate-800">
-                        <span>Total</span><span className="text-sky-700">{fmt(total)}</span>
-                    </div>
-                </div>
+                    <div className="w-80 flex flex-col gap-4">
+                        <div className="card p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                                <FiUser size={15} className="text-slate-500" />
+                                <h3 className="font-semibold text-slate-700 text-sm">Customer (Optional)</h3>
+                            </div>
+                            {customer ? (
+                                <div className="flex items-center gap-2 bg-sky-50 border border-sky-200 rounded-lg p-2.5">
+                                    <div className="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center text-sky-700 font-bold text-sm">
+                                        {customer.name.charAt(0)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-semibold text-sm text-slate-800">{customer.name}</div>
+                                        <div className="text-xs text-slate-500">{customer.phone}</div>
+                                    </div>
+                                    <button onClick={() => setCustomer(null)} className="text-slate-400 hover:text-red-500"><FiX /> </button>
+                                </div>
+                            ) : (
+                                <div className="relative">
+                                    <input type="text" placeholder="Search customer name or phone..."
+                                        value={customerSearch} onChange={e => setCustomerSearch(e.target.value)}
+                                        className="form-input text-sm" />
+                                    {customers.length > 0 && (
+                                        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-20">
+                                            {customers.map(c => (
+                                                <button key={c.id} onClick={() => { setCustomer(c); setCustomerSearch(''); setCustomers([]); }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 text-left">
+                                                    <div className="w-7 h-7 bg-sky-100 rounded-full flex items-center justify-center text-sky-700 font-bold text-xs">{c.name.charAt(0)}</div>
+                                                    <div><div className="text-sm font-medium">{c.name}</div><div className="text-xs text-slate-400">{c.phone}</div></div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
-                {/* Payment */}
-                <div className="card p-4 space-y-3">
-                    <div>
-                        <label className="form-label text-xs">Payment Method</label>
-                        <div className="grid grid-cols-2 gap-2 mt-1">
-                            {['cash', 'card', 'transfer', 'mobile_money'].map(m => (
-                                <button key={m} onClick={() => setPaymentMethod(m)}
-                                    className={`py-1.5 text-xs font-semibold rounded-lg border-2 transition-all capitalize ${paymentMethod === m ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}>
-                                    {m.replace('_', ' ')}
-                                </button>
-                            ))}
+                        {/* Discount & Tax */}
+                        <div className="card p-4 space-y-3">
+                            <div className="flex gap-2">
+                                <div className="flex-1">
+                                    <label className="form-label text-xs">Discount</label>
+                                    <input type="number" min="0" value={discount} onChange={e => setDiscount(e.target.value)} className="form-input text-sm" placeholder="0" />
+                                </div>
+                                <div>
+                                    <label className="form-label text-xs">Type</label>
+                                    <select value={discountType} onChange={e => setDiscountType(e.target.value)} className="form-input text-sm w-28">
+                                        <option value="fixed">ETB  Fixed</option>
+                                        <option value="percentage">% Percent</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="form-label text-xs">Tax Rate (%)</label>
+                                <input type="number" min="0" max="100" value={taxRate} onChange={e => setTaxRate(e.target.value)} className="form-input text-sm" placeholder="0" />
+                            </div>
+                        </div>
+
+                        {/* Summary */}
+                        <div className="card p-4 space-y-2">
+                            <div className="flex justify-between text-sm text-slate-600"><span>Subtotal</span><span className="font-medium">{fmt(subtotal)}</span></div>
+                            {discountAmt > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{fmt(discountAmt)}</span></div>}
+                            {taxAmt > 0 && <div className="flex justify-between text-sm text-slate-600"><span>Tax ({taxRate}%)</span><span>+{fmt(taxAmt)}</span></div>}
+                            <div className="border-t border-slate-200 pt-2 flex justify-between text-lg font-bold text-slate-800">
+                                <span>Total</span><span className="text-sky-700">{fmt(total)}</span>
+                            </div>
+                        </div>
+
+                        {/* Payment */}
+                        <div className="card p-4 space-y-3">
+                            <div>
+                                <label className="form-label text-xs">Payment Method</label>
+                                <div className="grid grid-cols-2 gap-2 mt-1">
+                                    {['cash', 'card', 'transfer', 'mobile_money'].map(m => (
+                                        <button key={m} onClick={() => setPaymentMethod(m)}
+                                            className={`py-1.5 text-xs font-semibold rounded-lg border-2 transition-all capitalize ${paymentMethod === m ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}>
+                                            {m.replace('_', ' ')}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="form-label text-xs">Amount Paid (ETB )</label>
+                                <input type="number" min="0" value={amountPaid} onChange={e => setAmountPaid(e.target.value)}
+                                    className="form-input font-semibold text-lg" placeholder={total.toFixed(2)} />
+                            </div>
+                            {parseFloat(amountPaid) >= total && parseFloat(amountPaid) > 0 && (
+                                <div className="flex justify-between text-sm font-semibold text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+                                    <span>Change</span><span>{fmt(Math.max(0, change))}</span>
+                                </div>
+                            )}
+                            <button onClick={handleCheckout} disabled={loading || cart.length === 0}
+                                className="w-full btn-secondary bg-sky-600 hover:bg-sky-500 text-white justify-center py-4 text-base font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+                                {loading ? <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                    : <><FiPrinter size={18} /> Complete Sale</>}
+                            </button>
                         </div>
                     </div>
-                    <div>
-                        <label className="form-label text-xs">Amount Paid (ETB )</label>
-                        <input type="number" min="0" value={amountPaid} onChange={e => setAmountPaid(e.target.value)}
-                            className="form-input font-semibold text-lg" placeholder={total.toFixed(2)} />
+                </div> // End Walkin Div
+            ) : (
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                    <div className="mx-auto max-w-5xl">
+                        {loadingPending ? (
+                            <div className="flex flex-col items-center justify-center p-20 text-slate-500">
+                                <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mb-4" />
+                                <p className="font-semibold">Searching for pending orders...</p>
+                            </div>
+                        ) : pendingOrders.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center p-20 text-slate-500 bg-white rounded-2xl shadow-sm border border-slate-100">
+                                <FiUserCheck size={64} className="mb-4 text-sky-200" />
+                                <h2 className="text-xl font-bold text-slate-700">All Caught Up!</h2>
+                                <p className="mt-2 text-center text-slate-500">There are no pending online bank transfers waiting to be verified.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                                {pendingOrders.map(o => (
+                                    <div key={o.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
+                                        <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-start">
+                                            <div>
+                                                <div className="font-bold text-lg text-slate-800">{o.order_number}</div>
+                                                <div className="text-sm font-medium text-slate-600 mt-1">{o.customer_name}</div>
+                                                <div className="text-xs text-slate-500">{o.customer_phone}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="font-bold text-2xl text-sky-600">ETB {parseFloat(o.total).toLocaleString()}</div>
+                                                <div className="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-1 rounded inline-block mt-2 border border-amber-200">
+                                                    AWAITING VERIFICATION
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-5 flex flex-col sm:flex-row gap-6">
+                                            <div className="w-full sm:w-1/2 flex flex-col gap-3 justify-center items-center p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                                                <h3 className="font-semibold text-slate-700 text-sm">Payment Screenshot</h3>
+                                                {o.payment_screenshot ? (
+                                                    <a href={o.payment_screenshot.startsWith('/') ? o.payment_screenshot : `/${o.payment_screenshot}`} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded shadow-sm">
+                                                        <img src={o.payment_screenshot.startsWith('/') ? o.payment_screenshot : `/${o.payment_screenshot}`} alt="Payment Proof" className="max-h-40 w-full object-cover transition-transform group-hover:scale-105" />
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-medium text-sm backdrop-blur-[2px]">
+                                                            View Full Screen
+                                                        </div>
+                                                    </a>
+                                                ) : (
+                                                    <div className="py-8 text-center text-slate-400">
+                                                        <span className="text-sm">No Image Uploaded</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="w-full sm:w-1/2 flex flex-col justify-center">
+                                                <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                                                    Please verify that the payment screenshot matches the total order amount of <strong className="text-slate-800">ETB {parseFloat(o.total).toLocaleString()}</strong>. Upon clicking complete, stock will be automatically deducted.
+                                                </p>
+                                                <button
+                                                    disabled={verifyingOrder === o.id}
+                                                    onClick={() => verifyOnlineOrder(o.id)}
+                                                    className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white font-bold py-4 rounded-xl transition-all shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] flex flex-col items-center justify-center gap-1 hover:-translate-y-0.5 active:translate-y-0"
+                                                >
+                                                    {verifyingOrder === o.id ? (
+                                                        <span className="flex items-center gap-2"><div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Verifying...</span>
+                                                    ) : (
+                                                        <>
+                                                            <span className="flex items-center gap-2 text-[15px]"><FiUserCheck size={18} /> Complete Payment</span>
+                                                            <span className="text-[11px] text-emerald-100 font-medium opacity-90">Verify & Deduct Stock</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    {parseFloat(amountPaid) >= total && parseFloat(amountPaid) > 0 && (
-                        <div className="flex justify-between text-sm font-semibold text-green-600 bg-green-50 px-3 py-2 rounded-lg">
-                            <span>Change</span><span>{fmt(Math.max(0, change))}</span>
-                        </div>
-                    )}
-                    <button onClick={handleCheckout} disabled={loading || cart.length === 0}
-                        className="w-full btn-secondary justify-center py-3 text-base font-bold disabled:opacity-50 disabled:cursor-not-allowed">
-                        {loading ? <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                            : <><FiPrinter size={16} /> Complete Sale</>}
-                    </button>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
