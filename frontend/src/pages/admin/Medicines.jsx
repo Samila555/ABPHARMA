@@ -180,6 +180,14 @@ export default function Medicines() {
         } catch { toast.error('Failed to update visibility'); }
     };
 
+    const updateCategory = async (id, categoryId, categoryName) => {
+        try {
+            await api.put(`/medicines/${id}`, { category_id: categoryId });
+            toast.success(`Category updated to ${categoryName}`);
+            fetchMedicines();
+        } catch { toast.error('Failed to update category. You may need to use the Edit button.'); }
+    };
+
     const cleanDuplicates = async () => {
         if (!window.confirm('This will scan the database for duplicated medicines and merge/delete them. Proceed?')) return;
         const toastId = toast.loading('Cleaning duplicates...');
@@ -450,7 +458,20 @@ export default function Medicines() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td><span className="badge badge-info text-xs">{m.category_name || '-'}</span></td>
+                                        <td>
+                                            <select
+                                                value={m.category_id || ''}
+                                                onChange={(e) => {
+                                                    const sel = e.target.options[e.target.selectedIndex];
+                                                    updateCategory(m.id, e.target.value, sel.text);
+                                                }}
+                                                className="form-input text-xs py-1 px-2 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 rounded-md bg-slate-50 hover:bg-white transition-colors"
+                                                style={{ minWidth: '130px' }}
+                                            >
+                                                <option value="">Uncategorized</option>
+                                                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                            </select>
+                                        </td>
                                         <td className="font-mono text-xs text-slate-600">{m.barcode || '-'}</td>
                                         <td>
                                             <div className={`font-semibold text-sm ${m.quantity <= m.min_stock_level ? 'text-red-600' : m.quantity <= m.min_stock_level * 2 ? 'text-amber-600' : 'text-green-600'}`}>
