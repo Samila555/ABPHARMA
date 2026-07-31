@@ -46,12 +46,34 @@ connectDB().then(async () => {
             'ALTER TABLE users MODIFY COLUMN avatar LONGTEXT',
         ];
         for (const sql of migrations) {
-            await pool.query(sql).catch(() => {});
+            await pool.query(sql).catch(() => { });
         }
         console.log('✅ Image columns verified as LONGTEXT');
     } catch (e) {
         console.log('⚠️  Image column migration skipped:', e.message);
     }
+
+    // Auto-clean duplicates from previously bugged Excel imports
+    try {
+        const { pool } = require('./config/database');
+        const [duplicates] = await pool.query(`
+            SELECT name, COUNT(*) as count 
+            FROM medicines 
+            GROUP BY name 
+            HAVING COUNT(*) > 1
+        `);
+        let deletedCount = 0;
+        for (const dup of duplicates) {
+            const [rows] = await pool.query('SELECT id FROM medicines WHERE name = ? ORDER BY id ASC', [dup.name]);
+            const idsToDelete = rows.slice(1).map(r => r.id);
+            if (idsToDelete.length > 0) {
+                await pool.query('DELETE FROM inventory_transactions WHERE medicine_id IN (?)', [idsToDelete]);
+                await pool.query('DELETE FROM medicines WHERE id IN (?)', [idsToDelete]);
+                deletedCount += idsToDelete.length;
+            }
+        }
+        if (deletedCount > 0) console.log(`✅ Auto-cleaned ${deletedCount} duplicate medicines`);
+    } catch (e) { console.log('⚠️ Duplicate cleanup error:', e.message); }
 });
 
 // Security Middleware
