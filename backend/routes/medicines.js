@@ -270,11 +270,10 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
             let category_id = null;
             const catRaw = item.category_id || item.category || item.category_name || rawItem.category_id || rawItem.Category;
             if (catRaw !== undefined && catRaw !== null && catRaw !== '') {
-                const catNum = parseInt(catRaw, 10);
-                if (!isNaN(catNum) && catByName[String(catNum)] !== undefined) {
-                    category_id = catNum;
-                } else if (!isNaN(catNum)) {
-                    category_id = catNum;
+                const catStr = String(catRaw).trim();
+                if (/^\d+$/.test(catStr)) {
+                    // It is strictly a number, treat as ID
+                    category_id = parseInt(catStr, 10);
                 } else {
                     // It's a category name — look up or auto-create
                     const catKey = String(catRaw).trim().toLowerCase();
@@ -296,11 +295,10 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
             let supplier_id = null;
             const supRaw = item.supplier_id || item.supplier || item.supplier_name || rawItem.supplier_id || rawItem.Supplier;
             if (supRaw !== undefined && supRaw !== null && supRaw !== '') {
-                const supNum = parseInt(supRaw, 10);
-                if (!isNaN(supNum) && supByName[String(supNum)] !== undefined) {
-                    supplier_id = supNum;
-                } else if (!isNaN(supNum)) {
-                    supplier_id = supNum;
+                const supStr = String(supRaw).trim();
+                if (/^\d+$/.test(supStr)) {
+                    // It is strictly a number, treat as ID
+                    supplier_id = parseInt(supStr, 10);
                 } else {
                     const supKey = String(supRaw).trim().toLowerCase();
                     if (supByName[supKey]) {
