@@ -275,7 +275,26 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
 
                 // Resolve category: accept numeric ID or category name
                 let category_id = null;
-                const catRaw = item.category_id || item.category || item.category_name || rawItem.category_id || rawItem.Category;
+                let catRaw = item.category_id || item.category || item.category_name || rawItem.category_id || rawItem.Category;
+
+                // --- AUTO-CATEGORIZATION MAGIC ---
+                // If the Excel file lacks a category column, intelligently guess it based on medicine names!
+                if (!catRaw || String(catRaw).trim() === '') {
+                    const txt = `${name} ${generic_name}`.toLowerCase();
+                    if (/cream|lotion|ointment|gel|skin|acne|ketoconazole|clotrimazole|derma/i.test(txt)) catRaw = 'Skin Care';
+                    else if (/pain|paracetamol|ibuprofen|diclofenac|aspirin|relief|ache|tramadol/i.test(txt)) catRaw = 'Pain Relief';
+                    else if (/vitamin|supplement|calcium|zinc|iron|c-vit|b-complex|magnesium|nutrition/i.test(txt)) catRaw = 'Vitamins & Supplements';
+                    else if (/baby|pediatric|child|infant|syrup|kid/i.test(txt)) catRaw = 'Baby Care';
+                    else if (/eye|drop|vision|tear/i.test(txt)) catRaw = 'Eye Care';
+                    else if (/ear|wax|otic/i.test(txt)) catRaw = 'Ear Care';
+                    else if (/dental|tooth|mouth|paste|oral/i.test(txt)) catRaw = 'Dental Care';
+                    else if (/diabetes|insulin|metformin|sugar/i.test(txt)) catRaw = 'Diabetes Care';
+                    else if (/women|preg|materni|fem/i.test(txt)) catRaw = 'Women Health';
+                    else if (/heart|cardio|blood pressure|amlodipine|losartan/i.test(txt)) catRaw = 'Heart Medicines';
+                    else if (/bandage|aid|plaster|cotton|syringe/i.test(txt)) catRaw = 'First Aid';
+                    else catRaw = 'OTC Medicines'; // Ultimate fallback so it never remains uncategorized
+                }
+
                 if (catRaw !== undefined && catRaw !== null && catRaw !== '') {
                     const catStr = String(catRaw).trim();
                     if (/^\d+$/.test(catStr)) {
