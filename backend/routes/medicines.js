@@ -281,7 +281,7 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
                 // If the Excel file lacks a category column, intelligently guess it based on medicine names!
                 if (!catRaw || String(catRaw).trim() === '') {
                     const txt = `${name} ${generic_name}`.toLowerCase();
-                    if (/cream|lotion|ointment|gel|skin|acne|ketoconazole|clotrimazole|derma/i.test(txt)) catRaw = 'Skin Care';
+                    if (/cream|lotion|ointment|gel|skin|acne|ketoconazol|clotrimazol|derma|acyclovir|zovirax/i.test(txt)) catRaw = 'Skin Care';
                     else if (/pain|paracetamol|ibuprofen|diclofenac|aspirin|relief|ache|tramadol/i.test(txt)) catRaw = 'Pain Relief';
                     else if (/vitamin|supplement|calcium|zinc|iron|c-vit|b-complex|magnesium|nutrition/i.test(txt)) catRaw = 'Vitamins & Supplements';
                     else if (/baby|pediatric|child|infant|syrup|kid/i.test(txt)) catRaw = 'Baby Care';
