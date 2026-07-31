@@ -36,7 +36,6 @@ const allNavSections = [
     {
         title: 'Admin',
         items: [
-            { icon: FiGlobe, label: 'Website CMS', to: '/admin/cms', roles: ['admin'] },
             { icon: MdQrCodeScanner, label: 'QR Code', to: '/admin/qr', roles: ['admin', 'pharmacist'] },
             { icon: FiBell, label: 'Notifications', to: '/admin/notifications', roles: ['admin', 'pharmacist'] },
             { icon: FiUsers, label: 'Users', to: '/admin/users', roles: ['admin'] },
