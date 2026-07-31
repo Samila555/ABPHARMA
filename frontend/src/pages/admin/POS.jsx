@@ -206,7 +206,7 @@ export default function POS() {
             <div className="flex-1 flex flex-col gap-4 overflow-hidden">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
-                        <MdOutlinePointOfSale className="text-sky-500" size={32} />
+                        <MdPointOfSale className="text-sky-500" size={32} />
                         AB Pharma POS
                     </h1>
                     <div className="flex gap-3">
