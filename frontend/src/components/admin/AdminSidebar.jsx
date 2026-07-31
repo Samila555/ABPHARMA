@@ -31,7 +31,6 @@ const allNavSections = [
         title: 'Commerce',
         items: [
             { icon: FiUsers, label: 'Customers', to: '/admin/customers', roles: ['admin', 'pharmacist', 'cashier'] },
-            { icon: FiUserCheck, label: 'Suppliers', to: '/admin/suppliers', roles: ['admin', 'pharmacist'] },
         ]
     },
     {
