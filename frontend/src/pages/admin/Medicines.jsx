@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiDownload, FiAlertTriangle, FiPackage, FiX, FiCheck, FiFilter, FiClock, FiTrash } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiDownload, FiAlertTriangle, FiPackage, FiX, FiCheck, FiFilter, FiClock, FiTrash, FiStar } from 'react-icons/fi';
 import api from '../../lib/api';
 import MedicineImage from '../../components/MedicineImage';
 import toast from 'react-hot-toast';
@@ -28,7 +28,7 @@ export default function Medicines() {
     const [medicines, setMedicines] = useState([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState({ search: '', category_id: '', status: '', low_stock: '', expiring_soon: '', page: 1, limit: 20 });
+    const [filters, setFilters] = useState({ search: '', category_id: '', status: '', visibility: '', low_stock: '', expiring_soon: '', page: 1, limit: 20 });
     const [categories, setCategories] = useState([]);
     const [importing, setImporting] = useState(false);
     const [previewData, setPreviewData] = useState(null);
@@ -170,6 +170,14 @@ export default function Medicines() {
         } finally {
             setImporting(false);
         }
+    };
+
+    const toggleFeature = async (id, isFeatured, name) => {
+        try {
+            await api.patch(`/medicines/${id}/feature`, { is_featured: !isFeatured });
+            toast.success(`"${name}" is now ${!isFeatured ? 'Visible' : 'Hidden'} on Customer Store`);
+            fetchMedicines();
+        } catch { toast.error('Failed to update visibility'); }
     };
 
     const handleDelete = async (id, name) => {
@@ -378,6 +386,12 @@ export default function Medicines() {
                         <option value="out_of_stock">Out of Stock</option>
                         <option value="discontinued">Discontinued</option>
                     </select>
+                    <select value={filters.visibility} onChange={e => setFilters(f => ({ ...f, visibility: e.target.value, page: 1 }))}
+                        className="form-input w-40 text-sm">
+                        <option value="">All Visibility</option>
+                        <option value="featured">Store: Visible</option>
+                        <option value="hidden">Store: Hidden</option>
+                    </select>
                     <button onClick={() => setFilters(f => ({ ...f, expiring_soon: f.expiring_soon ? '' : 'true', page: 1 }))}
                         className={`btn-outline text-sm py-2 ${filters.expiring_soon ? 'bg-orange-500 text-white border-orange-500' : ''}`}>
                         Expiring Soon
@@ -443,9 +457,21 @@ export default function Medicines() {
                                         </td>
                                         <td>
                                             <span className={`badge ${statusColor[m.status] || 'badge-secondary'}`}>{m.status?.replace('_', ' ')}</span>
+                                            <div className="mt-1">
+                                                {m.is_featured ? (
+                                                    <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-100">Visible on Store</span>
+                                                ) : (
+                                                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Hidden</span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td>
                                             <div className="flex items-center gap-1">
+                                                <button onClick={() => toggleFeature(m.id, !!m.is_featured, m.name)}
+                                                    title={m.is_featured ? "Hide from Store" : "Show on Store"}
+                                                    className={`p-1.5 rounded-lg transition-colors ${m.is_featured ? 'text-amber-500 hover:bg-amber-50' : 'text-slate-400 hover:bg-slate-100'}`}>
+                                                    <FiStar size={16} fill={m.is_featured ? "currentColor" : "none"} />
+                                                </button>
                                                 <button onClick={() => navigate(`/admin/medicines/edit/${m.id}`)}
                                                     className="p-1.5 text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
                                                     <FiEdit2 size={14} />

@@ -26,7 +26,7 @@ router.get('/diag/images', authenticate, authorize('admin'), async (req, res) =>
 // GET /api/medicines - List with filters
 router.get('/', async (req, res) => {
     try {
-        const { search, category_id, status, low_stock, expiring_soon, page = 1, limit = 20 } = req.query;
+        const { search, category_id, status, low_stock, expiring_soon, visibility, page = 1, limit = 20 } = req.query;
         let query = `
       SELECT m.*, c.name as category_name, s.name as supplier_name
       FROM medicines m
@@ -45,6 +45,8 @@ router.get('/', async (req, res) => {
         if (expiring_soon === 'true') {
             query += ` AND m.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) AND m.expiry_date >= CURDATE()`;
         }
+        if (visibility === 'featured') { query += ` AND m.is_featured = 1`; }
+        if (visibility === 'hidden') { query += ` AND m.is_featured = 0`; }
         const countQuery = query.replace('SELECT m.*, c.name as category_name, s.name as supplier_name', 'SELECT COUNT(*) as total');
         const [countRows] = await pool.query(countQuery, params);
         const total = countRows[0].total;
@@ -174,6 +176,18 @@ router.put('/:id', authenticate, authorize('admin', 'pharmacist'), upload('medic
     } catch (error) {
         console.error('PUT /medicines/:id error:', error);
         res.status(500).json({ success: false, message: error.code === 'ER_DUP_ENTRY' ? 'A medicine with this barcode already exists.' : 'Server error.', error: error.message });
+    }
+});
+
+// PATCH /api/medicines/:id/feature (Quick toggle for customer dashboard visibility)
+router.patch('/:id/feature', authenticate, authorize('admin'), async (req, res) => {
+    try {
+        const { is_featured } = req.body;
+        await pool.query('UPDATE medicines SET is_featured = ? WHERE id = ?', [is_featured ? 1 : 0, req.params.id]);
+        res.json({ success: true, message: `Visibility updated to ${is_featured ? 'Visible' : 'Hidden'}` });
+    } catch (error) {
+        console.error('PATCH /medicines/:id/feature error:', error);
+        res.status(500).json({ success: false, message: 'Server error.' });
     }
 });
 
