@@ -30,7 +30,6 @@ const allNavSections = [
     {
         title: 'Finance',
         items: [
-            { icon: FiDollarSign, label: 'Cash Flow', to: '/admin/cashflow', roles: ['admin'] },
             { icon: FiBarChart2, label: 'Reports', to: '/admin/reports', roles: ['admin'] },
         ]
     },
