@@ -238,83 +238,83 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
         let count = 0;
         const errors = [];
         for (const rawItem of medicines) {
-            // Normalize keys to handle spaces, different cases, and formatting issues
-            const item = {};
-            for (const key in rawItem) {
-                const cleanKey = key.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-                item[cleanKey] = rawItem[key];
-            }
-
-            const name = item.name || item.medicine_name || item.medicine || item.product_name || item.product || rawItem.name || rawItem.Name || rawItem.NAME;
-            if (!name || String(name).trim() === '') {
-                if (Object.keys(rawItem).length > 0) {
-                    errors.push({ name: 'Unknown Row', error: 'Missing medicine name column' });
-                }
-                continue;
-            }
-
-            const brand_name = item.brand_name || item.brand || rawItem.brand_name || rawItem.Brand || '';
-            const generic_name = item.generic_name || item.generic || rawItem.generic_name || rawItem.Generic || '';
-            const barcode = item.barcode || item.codigo || rawItem.barcode || rawItem.Barcode || '';
-            const selling_price = parseFloat(item.selling_price || item.price || item.retail_price || rawItem.selling_price || rawItem.Price || 0) || 0;
-            const purchase_price = parseFloat(item.purchase_price || item.cost || item.cost_price || rawItem.purchase_price || rawItem.Cost || 0) || 0;
-            const quantity = parseInt(item.quantity || item.qty || item.stock || item.inventory || rawItem.quantity || rawItem.Quantity || 0, 10) || 0;
-            const min_stock_level = parseInt(item.min_stock_level || item.min_stock || item.reorder_level || rawItem.min_stock_level || rawItem.MinStock || 10, 10) || 10;
-            const description = item.description || item.desc || rawItem.description || rawItem.Description || '';
-            const strength = item.strength || item.potency || rawItem.strength || rawItem.Strength || '';
-            const dosage_form = item.dosage_form || item.form || item.dosage || rawItem.dosage_form || rawItem.Form || 'Tablet';
-            const unit = item.unit || item.uom || rawItem.unit || rawItem.Unit || 'Piece';
-            const image = item.image || item.image_url || item.picture || item.photo || rawItem.image || rawItem.Image || '';
-
-            // Resolve category: accept numeric ID or category name
-            let category_id = null;
-            const catRaw = item.category_id || item.category || item.category_name || rawItem.category_id || rawItem.Category;
-            if (catRaw !== undefined && catRaw !== null && catRaw !== '') {
-                const catStr = String(catRaw).trim();
-                if (/^\d+$/.test(catStr)) {
-                    // It is strictly a number, treat as ID
-                    category_id = parseInt(catStr, 10);
-                } else {
-                    // It's a category name — look up or auto-create
-                    const catKey = String(catRaw).trim().toLowerCase();
-                    if (catByName[catKey]) {
-                        category_id = catByName[catKey];
-                    } else {
-                        const slug = catKey.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-                        const [newCat] = await conn.execute(
-                            'INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)',
-                            [catRaw.trim(), slug, `Auto-created from import`]
-                        );
-                        category_id = newCat.insertId;
-                        catByName[catKey] = category_id;
-                    }
-                }
-            }
-
-            // Resolve supplier: accept numeric ID or supplier name
-            let supplier_id = null;
-            const supRaw = item.supplier_id || item.supplier || item.supplier_name || rawItem.supplier_id || rawItem.Supplier;
-            if (supRaw !== undefined && supRaw !== null && supRaw !== '') {
-                const supStr = String(supRaw).trim();
-                if (/^\d+$/.test(supStr)) {
-                    // It is strictly a number, treat as ID
-                    supplier_id = parseInt(supStr, 10);
-                } else {
-                    const supKey = String(supRaw).trim().toLowerCase();
-                    if (supByName[supKey]) {
-                        supplier_id = supByName[supKey];
-                    } else {
-                        const [newSup] = await conn.execute(
-                            'INSERT INTO suppliers (name, country) VALUES (?, ?)',
-                            [supRaw.trim(), 'Ethiopia']
-                        );
-                        supplier_id = newSup.insertId;
-                        supByName[supKey] = supplier_id;
-                    }
-                }
-            }
-
             try {
+                // Normalize keys to handle spaces, different cases, and formatting issues
+                const item = {};
+                for (const key in rawItem) {
+                    const cleanKey = key.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+                    item[cleanKey] = rawItem[key];
+                }
+
+                const name = item.name || item.medicine_name || item.medicine || item.product_name || item.product || rawItem.name || rawItem.Name || rawItem.NAME;
+                if (!name || String(name).trim() === '') {
+                    if (Object.keys(rawItem).length > 0) {
+                        errors.push({ name: 'Unknown Row', error: 'Missing medicine name column' });
+                    }
+                    continue;
+                }
+
+                const brand_name = item.brand_name || item.brand || rawItem.brand_name || rawItem.Brand || '';
+                const generic_name = item.generic_name || item.generic || rawItem.generic_name || rawItem.Generic || '';
+                const barcode = item.barcode || item.codigo || rawItem.barcode || rawItem.Barcode || '';
+                const selling_price = parseFloat(item.selling_price || item.price || item.retail_price || rawItem.selling_price || rawItem.Price || 0) || 0;
+                const purchase_price = parseFloat(item.purchase_price || item.cost || item.cost_price || rawItem.purchase_price || rawItem.Cost || 0) || 0;
+                const quantity = parseInt(item.quantity || item.qty || item.stock || item.inventory || rawItem.quantity || rawItem.Quantity || 0, 10) || 0;
+                const min_stock_level = parseInt(item.min_stock_level || item.min_stock || item.reorder_level || rawItem.min_stock_level || rawItem.MinStock || 10, 10) || 10;
+                const description = item.description || item.desc || rawItem.description || rawItem.Description || '';
+                const strength = item.strength || item.potency || rawItem.strength || rawItem.Strength || '';
+                const dosage_form = item.dosage_form || item.form || item.dosage || rawItem.dosage_form || rawItem.Form || 'Tablet';
+                const unit = item.unit || item.uom || rawItem.unit || rawItem.Unit || 'Piece';
+                const image = item.image || item.image_url || item.picture || item.photo || rawItem.image || rawItem.Image || '';
+
+                // Resolve category: accept numeric ID or category name
+                let category_id = null;
+                const catRaw = item.category_id || item.category || item.category_name || rawItem.category_id || rawItem.Category;
+                if (catRaw !== undefined && catRaw !== null && catRaw !== '') {
+                    const catStr = String(catRaw).trim();
+                    if (/^\d+$/.test(catStr)) {
+                        // It is strictly a number, treat as ID
+                        category_id = parseInt(catStr, 10);
+                    } else {
+                        // It's a category name — look up or auto-create
+                        const catKey = String(catRaw).trim().toLowerCase();
+                        if (catByName[catKey]) {
+                            category_id = catByName[catKey];
+                        } else {
+                            const slug = catKey.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                            const [newCat] = await conn.execute(
+                                'INSERT INTO categories (name, slug, description) VALUES (?, ?, ?)',
+                                [catRaw.trim(), slug, `Auto-created from import`]
+                            );
+                            category_id = newCat.insertId;
+                            catByName[catKey] = category_id;
+                        }
+                    }
+                }
+
+                // Resolve supplier: accept numeric ID or supplier name
+                let supplier_id = null;
+                const supRaw = item.supplier_id || item.supplier || item.supplier_name || rawItem.supplier_id || rawItem.Supplier;
+                if (supRaw !== undefined && supRaw !== null && supRaw !== '') {
+                    const supStr = String(supRaw).trim();
+                    if (/^\d+$/.test(supStr)) {
+                        // It is strictly a number, treat as ID
+                        supplier_id = parseInt(supStr, 10);
+                    } else {
+                        const supKey = String(supRaw).trim().toLowerCase();
+                        if (supByName[supKey]) {
+                            supplier_id = supByName[supKey];
+                        } else {
+                            const [newSup] = await conn.execute(
+                                'INSERT INTO suppliers (name, country) VALUES (?, ?)',
+                                [supRaw.trim(), 'Ethiopia']
+                            );
+                            supplier_id = newSup.insertId;
+                            supByName[supKey] = supplier_id;
+                        }
+                    }
+                }
+
                 // Check if medicine already exists
                 const [existing] = await conn.execute(
                     'SELECT id, quantity FROM medicines WHERE name = ?',
