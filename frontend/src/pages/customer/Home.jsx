@@ -401,7 +401,7 @@ export default function Home() {
                                     border: 'none', cursor: 'pointer', transition: 'all 0.2s',
                                 }}
                             >All</motion.button>
-                            {categories.slice(0, 10).map(cat => (
+                            {categories.map(cat => (
                                 <motion.button key={cat.id}
                                     whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
                                     onClick={() => { setActiveCategory(cat.id); navigate(`/medicines?category_id=${cat.id}`); }}
