@@ -315,16 +315,40 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
             }
 
             try {
-                const [result] = await conn.execute(`
-                    INSERT INTO medicines (name, brand_name, generic_name, barcode, purchase_price, selling_price, quantity, min_stock_level, category_id, supplier_id, description, strength, dosage_form, unit, image, status, is_active, is_featured)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)
-                `, [name, brand_name || null, generic_name || null, barcode || null, purchase_price, selling_price, quantity, min_stock_level, category_id, supplier_id, description || null, strength || null, dosage_form, unit, image || null, 'available', 1]);
+                // Check if medicine already exists
+                const [existing] = await conn.execute(
+                    'SELECT id, quantity FROM medicines WHERE name = ?',
+                    [name]
+                );
 
-                if (quantity > 0) {
-                    await conn.execute(
-                        'INSERT INTO inventory_transactions (medicine_id, transaction_type, quantity, balance_before, balance_after, reason, created_by) VALUES (?,?,?,?,?,?,?)',
-                        [result.insertId, 'stock_in', quantity, 0, quantity, 'Excel Bulk Import', req.user.id]
-                    );
+                if (existing.length > 0) {
+                    const eId = existing[0].id;
+                    const oldQty = existing[0].quantity;
+                    await conn.execute(`
+                        UPDATE medicines 
+                        SET brand_name=?, generic_name=?, barcode=?, purchase_price=?, selling_price=?, min_stock_level=?, category_id=?, supplier_id=?, description=?, strength=?, dosage_form=?, unit=?, image=?
+                        WHERE id=?
+                    `, [brand_name || null, generic_name || null, barcode || null, purchase_price, selling_price, min_stock_level, category_id, supplier_id, description || null, strength || null, dosage_form, unit, image || null, eId]);
+
+                    if (quantity > 0) {
+                        await conn.execute('UPDATE medicines SET quantity = quantity + ? WHERE id = ?', [quantity, eId]);
+                        await conn.execute(
+                            'INSERT INTO inventory_transactions (medicine_id, transaction_type, quantity, balance_before, balance_after, reason, created_by) VALUES (?,?,?,?,?,?,?)',
+                            [eId, 'stock_in', quantity, oldQty, oldQty + quantity, 'Excel Bulk Import (Update)', req.user.id]
+                        );
+                    }
+                } else {
+                    const [result] = await conn.execute(`
+                        INSERT INTO medicines (name, brand_name, generic_name, barcode, purchase_price, selling_price, quantity, min_stock_level, category_id, supplier_id, description, strength, dosage_form, unit, image, status, is_active, is_featured)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)
+                    `, [name, brand_name || null, generic_name || null, barcode || null, purchase_price, selling_price, quantity, min_stock_level, category_id, supplier_id, description || null, strength || null, dosage_form, unit, image || null, 'available', 1]);
+
+                    if (quantity > 0) {
+                        await conn.execute(
+                            'INSERT INTO inventory_transactions (medicine_id, transaction_type, quantity, balance_before, balance_after, reason, created_by) VALUES (?,?,?,?,?,?,?)',
+                            [result.insertId, 'stock_in', quantity, 0, quantity, 'Excel Bulk Import (New)', req.user.id]
+                        );
+                    }
                 }
                 count++;
             } catch (rowErr) {
@@ -343,3 +367,31 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
 });
 
 module.exports = router;
+
+// Temporary Duplicate Cleanup Script route
+// Can be called manually to clean up previously duplicated data during import bugs
+router.post('/diag/deduplicate', authenticate, authorize('admin'), async (req, res) => {
+    try {
+        const [duplicates] = await pool.query(`
+            SELECT name, COUNT(*) as count 
+            FROM medicines 
+            GROUP BY name 
+            HAVING COUNT(*) > 1
+        `);
+
+        let deletedCount = 0;
+        for (const dup of duplicates) {
+            const [rows] = await pool.query('SELECT id FROM medicines WHERE name = ? ORDER BY id ASC', [dup.name]);
+            // Keep the first one, delete the rest (this logic removes extra ones without migrating their stock)
+            const idsToDelete = rows.slice(1).map(r => r.id);
+            if (idsToDelete.length > 0) {
+                await pool.query('DELETE FROM inventory_transactions WHERE medicine_id IN (?)', [idsToDelete]);
+                await pool.query('DELETE FROM medicines WHERE id IN (?)', [idsToDelete]);
+                deletedCount += idsToDelete.length;
+            }
+        }
+        res.json({ success: true, message: `Successfully deleted ${deletedCount} duplicate rows.` });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});

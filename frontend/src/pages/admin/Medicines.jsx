@@ -180,6 +180,18 @@ export default function Medicines() {
         } catch { toast.error('Failed to update visibility'); }
     };
 
+    const cleanDuplicates = async () => {
+        if (!window.confirm('This will scan the database for duplicated medicines and merge/delete them. Proceed?')) return;
+        const toastId = toast.loading('Cleaning duplicates...');
+        try {
+            const res = await api.post('/medicines/diag/deduplicate');
+            toast.success(res.data.message, { id: toastId });
+            fetchMedicines();
+        } catch (err) {
+            toast.error('Failed to clean duplicates.', { id: toastId });
+        }
+    };
+
     const handleDelete = async (id, name) => {
         if (!window.confirm(`⚠️ PERMANENTLY DELETE "${name}"?\n\nThis will completely remove this medicine and all its data from the database. This action CANNOT be undone.`)) return;
         try {
@@ -349,6 +361,9 @@ export default function Medicines() {
                         className={`btn-outline text-sm py-2 ${filters.low_stock ? 'bg-amber-600 text-white border-amber-600' : ''}`}>
                         <FiAlertTriangle size={14} /> Low Stock
                     </button>
+                    <button onClick={cleanDuplicates} className="btn-outline text-sm py-2 text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100">
+                        <FiAlertTriangle size={14} /> Clean Duplicates
+                    </button>
                     <button onClick={handleDownloadTemplate} className="btn-outline text-sm py-2 text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100">
                         <FiDownload size={14} /> Template
                     </button>
@@ -514,66 +529,68 @@ export default function Medicines() {
             </div>
 
             {/* ── Import History ───────────────────────────────── */}
-            {importHistory.length > 0 && (
-                <div className="card overflow-hidden">
-                    {/* Header */}
-                    <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <FiClock size={18} style={{ color: '#0284c7' }} />
-                            <span style={{ fontWeight: 700, fontSize: '15px', color: '#1e293b' }}>Import History</span>
-                            <span style={{ background: '#e0f2fe', color: '#0369a1', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', fontWeight: 600 }}>{importHistory.length} imports</span>
+            {
+                importHistory.length > 0 && (
+                    <div className="card overflow-hidden">
+                        {/* Header */}
+                        <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <FiClock size={18} style={{ color: '#0284c7' }} />
+                                <span style={{ fontWeight: 700, fontSize: '15px', color: '#1e293b' }}>Import History</span>
+                                <span style={{ background: '#e0f2fe', color: '#0369a1', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', fontWeight: 600 }}>{importHistory.length} imports</span>
+                            </div>
+                            <button
+                                onClick={() => { setImportHistory([]); localStorage.removeItem('abpharma_import_history'); }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', border: '1.5px solid #fecaca', background: '#fff1f2', color: '#dc2626', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                            >
+                                <FiTrash size={13} /> Clear History
+                            </button>
                         </div>
-                        <button
-                            onClick={() => { setImportHistory([]); localStorage.removeItem('abpharma_import_history'); }}
-                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', border: '1.5px solid #fecaca', background: '#fff1f2', color: '#dc2626', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
-                        >
-                            <FiTrash size={13} /> Clear History
-                        </button>
-                    </div>
 
-                    {/* Table */}
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                            <thead>
-                                <tr style={{ background: '#f1f5f9' }}>
-                                    {['#', 'File Name', 'Imported At', 'Total Rows', 'Imported ✅', 'Failed ❌', 'Status'].map(h => (
-                                        <th key={h} style={{ padding: '10px 16px', color: '#64748b', fontWeight: 700, fontSize: '11px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {importHistory.map((entry, idx) => {
-                                    const isSuccess = entry.failCount === 0;
-                                    const isPartial = entry.successCount > 0 && entry.failCount > 0;
-                                    const isFailed = entry.successCount === 0;
-                                    const statusLabel = isFailed ? 'Failed' : isPartial ? 'Partial' : 'Success';
-                                    const statusStyle = isFailed
-                                        ? { background: '#fee2e2', color: '#dc2626' }
-                                        : isPartial
-                                            ? { background: '#fef3c7', color: '#d97706' }
-                                            : { background: '#dcfce7', color: '#16a34a' };
-                                    const formattedDate = new Date(entry.date).toLocaleString();
-                                    return (
-                                        <tr key={entry.id} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#fff' : '#f8fafc' }}>
-                                            <td style={{ padding: '10px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '12px' }}>{importHistory.length - idx}</td>
-                                            <td style={{ padding: '10px 16px', fontWeight: 600, color: '#334155', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={entry.fileName}>
-                                                📄 {entry.fileName}
-                                            </td>
-                                            <td style={{ padding: '10px 16px', color: '#64748b', whiteSpace: 'nowrap' }}>{formattedDate}</td>
-                                            <td style={{ padding: '10px 16px', color: '#334155', fontWeight: 600, textAlign: 'center' }}>{entry.totalRows}</td>
-                                            <td style={{ padding: '10px 16px', color: '#16a34a', fontWeight: 700, textAlign: 'center', fontSize: '14px' }}>{entry.successCount}</td>
-                                            <td style={{ padding: '10px 16px', color: entry.failCount > 0 ? '#dc2626' : '#94a3b8', fontWeight: entry.failCount > 0 ? 700 : 400, textAlign: 'center', fontSize: '14px' }}>{entry.failCount}</td>
-                                            <td style={{ padding: '10px 16px' }}>
-                                                <span style={{ ...statusStyle, borderRadius: '20px', padding: '3px 12px', fontSize: '11px', fontWeight: 700 }}>{statusLabel}</span>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                        {/* Table */}
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                <thead>
+                                    <tr style={{ background: '#f1f5f9' }}>
+                                        {['#', 'File Name', 'Imported At', 'Total Rows', 'Imported ✅', 'Failed ❌', 'Status'].map(h => (
+                                            <th key={h} style={{ padding: '10px 16px', color: '#64748b', fontWeight: 700, fontSize: '11px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {importHistory.map((entry, idx) => {
+                                        const isSuccess = entry.failCount === 0;
+                                        const isPartial = entry.successCount > 0 && entry.failCount > 0;
+                                        const isFailed = entry.successCount === 0;
+                                        const statusLabel = isFailed ? 'Failed' : isPartial ? 'Partial' : 'Success';
+                                        const statusStyle = isFailed
+                                            ? { background: '#fee2e2', color: '#dc2626' }
+                                            : isPartial
+                                                ? { background: '#fef3c7', color: '#d97706' }
+                                                : { background: '#dcfce7', color: '#16a34a' };
+                                        const formattedDate = new Date(entry.date).toLocaleString();
+                                        return (
+                                            <tr key={entry.id} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#fff' : '#f8fafc' }}>
+                                                <td style={{ padding: '10px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '12px' }}>{importHistory.length - idx}</td>
+                                                <td style={{ padding: '10px 16px', fontWeight: 600, color: '#334155', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={entry.fileName}>
+                                                    📄 {entry.fileName}
+                                                </td>
+                                                <td style={{ padding: '10px 16px', color: '#64748b', whiteSpace: 'nowrap' }}>{formattedDate}</td>
+                                                <td style={{ padding: '10px 16px', color: '#334155', fontWeight: 600, textAlign: 'center' }}>{entry.totalRows}</td>
+                                                <td style={{ padding: '10px 16px', color: '#16a34a', fontWeight: 700, textAlign: 'center', fontSize: '14px' }}>{entry.successCount}</td>
+                                                <td style={{ padding: '10px 16px', color: entry.failCount > 0 ? '#dc2626' : '#94a3b8', fontWeight: entry.failCount > 0 ? 700 : 400, textAlign: 'center', fontSize: '14px' }}>{entry.failCount}</td>
+                                                <td style={{ padding: '10px 16px' }}>
+                                                    <span style={{ ...statusStyle, borderRadius: '20px', padding: '3px 12px', fontSize: '11px', fontWeight: 700 }}>{statusLabel}</span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }
