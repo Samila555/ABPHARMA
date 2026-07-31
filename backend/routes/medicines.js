@@ -256,11 +256,17 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
 
                 const brand_name = item.brand_name || item.brand || rawItem.brand_name || rawItem.Brand || '';
                 const generic_name = item.generic_name || item.generic || rawItem.generic_name || rawItem.Generic || '';
-                const barcode = item.barcode || item.codigo || rawItem.barcode || rawItem.Barcode || '';
-                const selling_price = parseFloat(item.selling_price || item.price || item.retail_price || rawItem.selling_price || rawItem.Price || 0) || 0;
-                const purchase_price = parseFloat(item.purchase_price || item.cost || item.cost_price || rawItem.purchase_price || rawItem.Cost || 0) || 0;
-                const quantity = parseInt(item.quantity || item.qty || item.stock || item.inventory || rawItem.quantity || rawItem.Quantity || 0, 10) || 0;
-                const min_stock_level = parseInt(item.min_stock_level || item.min_stock || item.reorder_level || rawItem.min_stock_level || rawItem.MinStock || 10, 10) || 10;
+                let barcode = item.barcode || item.codigo || rawItem.barcode || rawItem.Barcode || '';
+                if (barcode) barcode = String(barcode).trim();
+                const parseNum = (val, def) => {
+                    const n = parseFloat(String(val).trim());
+                    return isNaN(n) ? def : n;
+                };
+
+                const purchase_price = parseNum(item.purchase_price || item.cost || item.cost_price || rawItem.purchase_price || rawItem.Cost, 0);
+                const selling_price = parseNum(item.selling_price || item.price || item.retail_price || rawItem.selling_price || rawItem.Price, 0);
+                const quantity = Math.round(parseNum(item.quantity || item.qty || item.stock || item.inventory || rawItem.quantity || rawItem.Quantity, 0));
+                const min_stock_level = Math.round(parseNum(item.min_stock_level || item.min_stock || item.reorder_level || rawItem.min_stock_level || rawItem.MinStock, 10));
                 const description = item.description || item.desc || rawItem.description || rawItem.Description || '';
                 const strength = item.strength || item.potency || rawItem.strength || rawItem.Strength || '';
                 const dosage_form = item.dosage_form || item.form || item.dosage || rawItem.dosage_form || rawItem.Form || 'Tablet';
