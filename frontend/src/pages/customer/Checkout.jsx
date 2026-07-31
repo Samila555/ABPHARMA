@@ -9,8 +9,9 @@ export default function Checkout() {
     const { items, getCartTotal, clearCart } = useCartStore();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState({ name: '', phone: '', email: '', payment_method: 'transfer', rxFile: null });
+    const [form, setForm] = useState({ name: '', phone: '', email: '', payment_method: 'transfer', rxFile: null, screenshotFile: null });
     const [rxPreview, setRxPreview] = useState(null);
+    const [ssPreview, setSsPreview] = useState(null);
 
     const total = getCartTotal();
     const finalTotal = total;
@@ -29,31 +30,40 @@ export default function Checkout() {
         }
     };
 
+    const handleScreenshotChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setForm(f => ({ ...f, screenshotFile: file }));
+            const r = new FileReader(); r.onload = ev => setSsPreview(ev.target.result); r.readAsDataURL(file);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (requiresRx && !form.rxFile) return toast.error('A prescription is required for your items.');
+        if (form.payment_method === 'transfer' && !form.screenshotFile) return toast.error('Please upload your payment screenshot.');
 
         setLoading(true);
         try {
-            // 1. Create order
-            const orderPayload = {
-                customer_name: form.name, customer_phone: form.phone, customer_email: form.email,
-                shipping_address: '',
-                order_type: 'online', delivery_type: 'pickup', payment_method: form.payment_method,
-                status: 'pending', payment_status: 'pending', items
-            };
+            const formData = new FormData();
+            formData.append('customer_name', form.name);
+            formData.append('customer_phone', form.phone);
+            formData.append('customer_email', form.email);
+            formData.append('payment_method', form.payment_method);
+            formData.append('items_json', JSON.stringify(items));
+            if (form.screenshotFile) formData.append('screenshot', form.screenshotFile);
 
-            const res = await api.post('/orders', orderPayload);
+            const res = await api.post('/public/orders', formData);
             const orderNumber = res.data.order_number;
 
             // 2. Upload Prescription if needed
             if (requiresRx && form.rxFile) {
-                const formData = new FormData();
-                formData.append('customer_name', form.name);
-                formData.append('doctor_name', 'Online Upload');
-                formData.append('image', form.rxFile);
-                formData.append('notes', `Attached to order ${orderNumber}`);
-                await api.post('/prescriptions', formData);
+                const rxData = new FormData();
+                rxData.append('customer_name', form.name);
+                rxData.append('doctor_name', 'Online Upload');
+                rxData.append('image', form.rxFile);
+                rxData.append('notes', `Attached to order ${orderNumber}`);
+                await api.post('/public/prescriptions', rxData); // Ensure this route is public or it fails
             }
 
             toast.success('Order placed successfully!');
@@ -105,7 +115,7 @@ export default function Checkout() {
                         {/* Payment Method */}
                         <div className="card p-6 lg:p-8">
                             <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">3. Payment Method</h2>
-                            <div className="space-y-3">
+                            <div className="space-y-3 mb-6">
                                 {[{ id: 'transfer', l: 'Bank Transfer' }, { id: 'card', l: 'Credit / Debit Card' }, { id: 'cash', l: 'Cash / POS on Pickup' }].map(m => (
                                     <label key={m.id} className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-colors ${form.payment_method === m.id ? 'border-sky-500 bg-sky-50' : 'border-slate-200'}`}>
                                         <input type="radio" checked={form.payment_method === m.id} onChange={() => setForm(f => ({ ...f, payment_method: m.id }))} className="w-5 h-5 text-sky-600 focus:ring-sky-500" />
@@ -113,6 +123,17 @@ export default function Checkout() {
                                     </label>
                                 ))}
                             </div>
+
+                            {form.payment_method === 'transfer' && (
+                                <div className="border-2 border-dashed border-sky-300 bg-white rounded-xl p-6 text-center hover:border-sky-500 transition-colors cursor-pointer relative mt-4">
+                                    <input type="file" accept="image/*" onChange={handleScreenshotChange} required className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                    {ssPreview ? (
+                                        <div className="relative z-0"><img src={ssPreview} alt="Screenshot" className="mx-auto max-h-48 rounded" /><p className="text-sm text-sky-600 mt-2 font-medium">Click to change payment screenshot</p></div>
+                                    ) : (
+                                        <div className="relative z-0 py-4"><FiUploadCloud className="mx-auto text-sky-400 mb-2" size={32} /><div className="font-semibold text-slate-700">Upload Transfer Screenshot *</div><div className="text-sm text-slate-500 mt-1">Please pay using CBE/Telebirr and upload receipt.</div></div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 

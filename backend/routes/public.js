@@ -1,6 +1,9 @@
 const express = require('express');
 const { pool } = require('../config/database');
+const upload = require('../middleware/upload');
 const router = express.Router();
+
+const generateOrderNumber = () => `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
 // Public medicine search for customer-facing website
 router.get('/medicines', async (req, res) => {
@@ -136,6 +139,52 @@ router.get('/cms', async (req, res) => {
     } catch (error) {
         console.error('GET /api/public/cms error:', error);
         res.status(500).json({ success: false, message: 'Server error.', error: error.message });
+    }
+});
+
+// POST /api/public/orders (Customer Checkout with Screenshot)
+router.post('/orders', upload('payments').single('screenshot'), async (req, res) => {
+    const conn = await pool.getConnection();
+    await conn.beginTransaction();
+    try {
+        const { customer_name, customer_phone, customer_email, payment_method, items_json } = req.body;
+        const items = JSON.parse(items_json || '[]');
+
+        let subtotal = 0;
+        for (const item of items) {
+            subtotal += (item.selling_price * item.quantity);
+        }
+
+        const screenshotPath = req.file ? req.file.path : null;
+        const order_number = generateOrderNumber();
+
+        const [orderResult] = await conn.execute(`
+            INSERT INTO orders (order_number, customer_name, customer_phone, customer_email,
+            order_type, payment_method, subtotal, total, amount_paid, change_amount,
+            status, payment_status, payment_screenshot)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+            [order_number, customer_name, customer_phone, customer_email || null,
+                'online', payment_method, subtotal, subtotal, 0, 0, 'pending', 'pending', screenshotPath]
+        );
+
+        const orderId = orderResult.insertId;
+
+        for (const item of items) {
+            await conn.execute(`
+                INSERT INTO order_items (order_id, medicine_id, medicine_name, quantity, unit_price, total)
+                VALUES (?,?,?,?,?,?)`,
+                [orderId, item.id || null, item.name, item.quantity, item.selling_price, item.selling_price * item.quantity]
+            );
+        }
+
+        await conn.commit();
+        res.status(201).json({ success: true, message: 'Order submitted for verification.', order_number });
+    } catch (error) {
+        await conn.rollback();
+        console.error("Public Order Error:", error);
+        res.status(500).json({ success: false, message: 'Server error.', error: String(error) });
+    } finally {
+        conn.release();
     }
 });
 

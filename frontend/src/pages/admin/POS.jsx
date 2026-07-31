@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiPlus, FiMinus, FiTrash2, FiPrinter, FiUser, FiBarChart } from 'react-icons/fi';
+import { FiSearch, FiPlus, FiMinus, FiTrash2, FiPrinter, FiUser, FiBarChart, FiUserCheck, FiX } from 'react-icons/fi';
 import { MdPointOfSale } from 'react-icons/md';
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
@@ -18,9 +18,32 @@ export default function POS() {
     const [paymentMethod, setPaymentMethod] = useState('cash');
     const [amountPaid, setAmountPaid] = useState('');
     const [loading, setLoading] = useState(false);
-    const [barcodeMode, setBarcodeMode] = useState(false);
-    const barcodeRef = useRef();
+    const [showPending, setShowPending] = useState(false);
+    const [pendingOrders, setPendingOrders] = useState([]);
+    const [loadingPending, setLoadingPending] = useState(false);
+    const [verifyingOrder, setVerifyingOrder] = useState(null);
     const searchRef = useRef();
+
+    const fetchPendingOrders = async () => {
+        setLoadingPending(true);
+        try {
+            const res = await api.get('/orders?payment_status=pending&order_type=online');
+            setPendingOrders(res.data.data);
+        } catch { toast.error('Failed to load pending transfers'); }
+        setLoadingPending(false);
+    };
+
+    const verifyOnlineOrder = async (orderId) => {
+        setVerifyingOrder(orderId);
+        try {
+            await api.patch(`/orders/${orderId}/approve`);
+            toast.success('Payment verified and stock deducted!');
+            fetchPendingOrders();
+        } catch (e) {
+            toast.error(e.response?.data?.message || 'Verification failed');
+        }
+        setVerifyingOrder(null);
+    };
 
     // Search medicines
     useEffect(() => {
@@ -66,7 +89,6 @@ export default function POS() {
         setCart(prev => prev.map(i => i.medicine_id === id ? { ...i, quantity: Math.min(qty, i.max_qty) } : i));
     };
 
-    // Calculations
     const subtotal = cart.reduce((s, i) => s + (i.unit_price * i.quantity) - (i.item_discount || 0), 0);
     const discountAmt = discountType === 'percentage' ? subtotal * discount / 100 : parseFloat(discount) || 0;
     const taxAmt = (subtotal - discountAmt) * taxRate / 100;
@@ -93,10 +115,8 @@ export default function POS() {
                 amount_paid: parseFloat(amountPaid || total),
             };
             const res = await api.post('/orders', payload);
-            toast.success(`ETB  Sale completed! Order: ${res.data.order_number}`);
-            // Print receipt
+            toast.success(`Sale completed! Order: ${res.data.order_number}`);
             printReceipt(res.data.order_number);
-            // Reset
             setCart([]);
             setCustomer(null);
             setCustomerSearch('');
@@ -126,7 +146,7 @@ export default function POS() {
       <div class="row total"><span>TOTAL:</span><span>${fmt(total)}</span></div>
       <div class="row"><span>Paid:</span><span>${fmt(parseFloat(amountPaid || total))}</span></div>
       <div class="row"><span>Change:</span><span>${fmt(Math.max(0, change))}</span></div>
-      <div class="line"></div><p style="text-align:center">Thank you for your purchase!<br>Get well soon! ETB �</p>
+      <div class="line"></div><p style="text-align:center">Thank you for your purchase!</p>
       </body></html>
     `);
         win.print();
@@ -135,20 +155,72 @@ export default function POS() {
 
     return (
         <div className="flex gap-4 h-[calc(100vh-120px)]">
-            {/* Left - Product Search */}
+            {showPending && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowPending(false)}>
+                    <div className="bg-white rounded-2xl w-full max-w-3xl p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold flex items-center gap-2"><FiUserCheck className="text-amber-500" /> Verify Online Bank Transfers</h2>
+                            <button onClick={() => setShowPending(false)} className="text-slate-400 hover:text-slate-600"><FiX size={24} /></button>
+                        </div>
+                        {loadingPending ? <div className="p-8 text-center"><div className="w-8 h-8 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin mx-auto" /></div> :
+                            pendingOrders.length === 0 ? <p className="text-center text-slate-500 py-8">No pending online transfers to verify.</p> : (
+                                <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+                                    {pendingOrders.map(o => (
+                                        <div key={o.id} className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm flex flex-col md:flex-row gap-6">
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div>
+                                                        <div className="font-bold text-lg text-slate-800">{o.order_number}</div>
+                                                        <div className="text-sm text-slate-500">{o.customer_name} • {o.customer_phone}</div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-bold text-xl text-sky-600">ETB {parseFloat(o.total).toLocaleString()}</div>
+                                                        <div className="text-xs font-semibold text-amber-500 bg-amber-50 px-2 py-1 rounded inline-block mt-1">Awaiting Verification</div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    disabled={verifyingOrder === o.id}
+                                                    onClick={() => verifyOnlineOrder(o.id)}
+                                                    className="w-full mt-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                                                >
+                                                    {verifyingOrder === o.id ? 'Verifying...' : 'Verify Transfer & Deduct Stock'}
+                                                </button>
+                                            </div>
+                                            <div className="w-full md:w-64 bg-slate-50 rounded-xl border border-dashed border-slate-300 p-2 flex items-center justify-center">
+                                                {o.payment_screenshot ? (
+                                                    <a href={o.payment_screenshot.startsWith('/') ? o.payment_screenshot : `/${o.payment_screenshot}`} target="_blank" rel="noreferrer">
+                                                        <img src={o.payment_screenshot.startsWith('/') ? o.payment_screenshot : `/${o.payment_screenshot}`} alt="Payment Proof" className="max-h-48 rounded object-cover cursor-pointer hover:opacity-90" />
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-slate-400 text-sm">No Screenshot Provided</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                    </div>
+                </div>
+            )}
+
             <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 bg-sky-600 text-white px-3 py-2 rounded-lg">
-                        <MdPointOfSale size={20} />
-                        <span className="font-semibold">POS System</span>
+                <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                        <MdOutlinePointOfSale className="text-sky-500" size={32} />
+                        AB Pharma POS
+                    </h1>
+                    <div className="flex gap-3">
+                        <button onClick={() => { fetchPendingOrders(); setShowPending(true); }} className="px-4 py-2 rounded-lg border border-amber-300 text-amber-600 hover:bg-amber-50 flex items-center gap-2">
+                            <FiUserCheck /> Verify Online Transfers
+                            {pendingOrders.length > 0 && <span className="bg-red-500 text-white rounded-full px-2 py-0.5 text-xs">{pendingOrders.length}</span>}
+                        </button>
                     </div>
                 </div>
 
-                {/* Search */}
                 <div className="card p-3">
                     <div className="relative">
                         <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                        <input ref={searchRef} type="text" placeholder="Search medicine by name, brand, generic, barcode..."
+                        <input ref={searchRef} type="text" placeholder="Search medicine..."
                             value={search} onChange={e => setSearch(e.target.value)}
                             className="form-input pl-10" autoFocus />
                     </div>
@@ -163,11 +235,10 @@ export default function POS() {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="font-medium text-sm text-slate-800 truncate">{m.name}</div>
-                                        <div className="text-xs text-slate-500">{m.strength} ETB  Stock: {m.quantity}</div>
+                                        <div className="text-xs text-slate-500">{m.strength} ETB Stock: {m.quantity}</div>
                                     </div>
                                     <div className="text-right flex-shrink-0">
                                         <div className="text-sm font-bold text-green-600">ETB {parseFloat(m.selling_price).toLocaleString()}</div>
-                                        {m.quantity <= 0 && <div className="text-xs text-red-500">Out!</div>}
                                     </div>
                                 </button>
                             ))}
@@ -175,19 +246,12 @@ export default function POS() {
                     )}
                 </div>
 
-                {/* Cart items */}
                 <div className="card flex-1 overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                         <h3 className="font-semibold text-slate-800">Cart ({cart.length} items)</h3>
                         {cart.length > 0 && <button onClick={() => setCart([])} className="text-sm text-red-500 hover:text-red-700">Clear All</button>}
                     </div>
                     <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                        {cart.length === 0 && (
-                            <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                                <MdPointOfSale size={40} className="mb-2 opacity-30" />
-                                <div className="text-sm">Cart is empty. Search and add medicines.</div>
-                            </div>
-                        )}
                         <AnimatePresence>
                             {cart.map(item => (
                                 <motion.div key={item.medicine_id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
@@ -197,22 +261,12 @@ export default function POS() {
                                         <div className="text-xs text-slate-500">ETB {item.unit_price.toLocaleString()} each</div>
                                     </div>
                                     <div className="flex items-center gap-2 flex-shrink-0">
-                                        <button onClick={() => updateQty(item.medicine_id, item.quantity - 1)}
-                                            className="w-7 h-7 bg-slate-200 hover:bg-red-100 rounded-lg flex items-center justify-center text-sm font-bold transition-colors">
-                                            <FiMinus size={12} />
-                                        </button>
+                                        <button onClick={() => updateQty(item.medicine_id, item.quantity - 1)} className="w-7 h-7 bg-slate-200 rounded-lg flex items-center justify-center"><FiMinus size={12} /></button>
                                         <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
-                                        <button onClick={() => updateQty(item.medicine_id, item.quantity + 1)}
-                                            className="w-7 h-7 bg-slate-200 hover:bg-green-100 rounded-lg flex items-center justify-center text-sm font-bold transition-colors">
-                                            <FiPlus size={12} />
-                                        </button>
+                                        <button onClick={() => updateQty(item.medicine_id, item.quantity + 1)} className="w-7 h-7 bg-slate-200 rounded-lg flex items-center justify-center"><FiPlus size={12} /></button>
                                     </div>
-                                    <div className="text-right flex-shrink-0">
-                                        <div className="font-bold text-sm text-slate-800">ETB {(item.unit_price * item.quantity).toLocaleString()}</div>
-                                    </div>
-                                    <button onClick={() => removeItem(item.medicine_id)} className="text-red-400 hover:text-red-600 ml-1">
-                                        <FiTrash2 size={14} />
-                                    </button>
+                                    <div className="text-right font-bold text-sm">ETB {(item.unit_price * item.quantity).toLocaleString()}</div>
+                                    <button onClick={() => removeItem(item.medicine_id)} className="text-red-400"><FiTrash2 size={14} /></button>
                                 </motion.div>
                             ))}
                         </AnimatePresence>
@@ -220,9 +274,7 @@ export default function POS() {
                 </div>
             </div>
 
-            {/* Right - Checkout Panel */}
             <div className="w-80 flex flex-col gap-4">
-                {/* Customer */}
                 <div className="card p-4">
                     <div className="flex items-center gap-2 mb-3">
                         <FiUser size={15} className="text-slate-500" />
@@ -237,7 +289,7 @@ export default function POS() {
                                 <div className="font-semibold text-sm text-slate-800">{customer.name}</div>
                                 <div className="text-xs text-slate-500">{customer.phone}</div>
                             </div>
-                            <button onClick={() => setCustomer(null)} className="text-slate-400 hover:text-red-500">ETB </button>
+                            <button onClick={() => setCustomer(null)} className="text-slate-400 hover:text-red-500"><FiX /> </button>
                         </div>
                     ) : (
                         <div className="relative">

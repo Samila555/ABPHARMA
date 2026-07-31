@@ -141,6 +141,49 @@ router.patch('/:id/status', authenticate, async (req, res) => {
     }
 });
 
+// PATCH /api/orders/:id/approve (Cashier approves online screenshot)
+router.patch('/:id/approve', authenticate, async (req, res) => {
+    const conn = await pool.getConnection();
+    await conn.beginTransaction();
+    try {
+        const orderId = req.params.id;
+        const [orders] = await conn.execute('SELECT * FROM orders WHERE id = ?', [orderId]);
+        if (!orders.length) return res.status(404).json({ success: false, message: 'Order not found.' });
+        if (orders[0].status === 'completed') return res.status(400).json({ success: false, message: 'Already completed!' });
+
+        // Mark order as completed and paid
+        await conn.execute('UPDATE orders SET status=?, payment_status=?, cashier_id=? WHERE id=?', ['completed', 'paid', req.user.id, orderId]);
+
+        // Deduct inventory NOW
+        const [items] = await conn.execute('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
+        for (const item of items) {
+            if (item.medicine_id) {
+                const [med] = await conn.execute('SELECT quantity FROM medicines WHERE id = ?', [item.medicine_id]);
+                const newQty = Math.max(0, (med[0]?.quantity || 0) - item.quantity);
+                await conn.execute('UPDATE medicines SET quantity = ? WHERE id = ?', [newQty, item.medicine_id]);
+                await conn.execute(
+                    'INSERT INTO inventory_transactions (medicine_id, transaction_type, quantity, balance_before, balance_after, reference_type, reference_id, created_by) VALUES (?,?,?,?,?,?,?,?)',
+                    [item.medicine_id, 'stock_out', item.quantity, med[0]?.quantity || 0, newQty, 'order', orderId, req.user.id]
+                );
+            }
+        }
+
+        // Cash flow entry
+        await conn.execute(
+            'INSERT INTO cash_flow (type, category, description, amount, payment_method, reference_type, reference_id, date, created_by) VALUES (?,?,?,?,?,?,?,CURDATE(),?)',
+            ['income', 'Sales', `Order ${orders[0].order_number} (Verified)`, orders[0].total, orders[0].payment_method, 'order', orderId, req.user.id]
+        );
+
+        await conn.commit();
+        res.json({ success: true, message: 'Payment verified and stock updated!' });
+    } catch (error) {
+        await conn.rollback();
+        res.status(500).json({ success: false, message: 'Server error.', error: error.message });
+    } finally {
+        conn.release();
+    }
+});
+
 // POST /api/orders/:id/payment-proof
 router.post('/:id/payment-proof', authenticate, upload('payments').single('screenshot'), async (req, res) => {
     try {
