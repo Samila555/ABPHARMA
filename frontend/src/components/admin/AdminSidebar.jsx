@@ -28,12 +28,6 @@ const allNavSections = [
         ]
     },
     {
-        title: 'Commerce',
-        items: [
-            { icon: FiUsers, label: 'Customers', to: '/admin/customers', roles: ['admin', 'pharmacist', 'cashier'] },
-        ]
-    },
-    {
         title: 'Finance',
         items: [
             { icon: FiDollarSign, label: 'Cash Flow', to: '/admin/cashflow', roles: ['admin'] },
