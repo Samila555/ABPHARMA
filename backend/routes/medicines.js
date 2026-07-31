@@ -324,11 +324,13 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
                 if (existing.length > 0) {
                     const eId = existing[0].id;
                     const oldQty = existing[0].quantity;
+                    const newStatus = (quantity > 0 || oldQty > 0) ? 'available' : 'out_of_stock';
+
                     await conn.execute(`
                         UPDATE medicines 
-                        SET brand_name=?, generic_name=?, barcode=?, purchase_price=?, selling_price=?, min_stock_level=?, category_id=?, supplier_id=?, description=?, strength=?, dosage_form=?, unit=?, image=?
+                        SET brand_name=?, generic_name=?, barcode=?, purchase_price=?, selling_price=?, min_stock_level=?, category_id=?, supplier_id=?, description=?, strength=?, dosage_form=?, unit=?, image=?, status=?, is_active=1
                         WHERE id=?
-                    `, [brand_name || null, generic_name || null, barcode || null, purchase_price, selling_price, min_stock_level, category_id, supplier_id, description || null, strength || null, dosage_form, unit, image || null, eId]);
+                    `, [brand_name || null, generic_name || null, barcode || null, purchase_price, selling_price, min_stock_level, category_id, supplier_id, description || null, strength || null, dosage_form, unit, image || null, newStatus, eId]);
 
                     if (quantity > 0) {
                         await conn.execute('UPDATE medicines SET quantity = quantity + ? WHERE id = ?', [quantity, eId]);
@@ -352,7 +354,9 @@ router.post('/import', authenticate, authorize('admin', 'pharmacist'), async (re
                 }
                 count++;
             } catch (rowErr) {
-                errors.push({ name, error: rowErr.message });
+                console.error("ROW EXCEPTION:", rowErr);
+                require('fs').appendFileSync('error.log', new Date().toISOString() + ' ROW EXCEPTION: ' + rowErr.stack + '\n');
+                errors.push({ name: rawItem.name || 'Unknown', error: rowErr.message });
             }
         }
         await conn.commit();
@@ -395,3 +399,14 @@ router.post('/diag/deduplicate', authenticate, authorize('admin'), async (req, r
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
+router.get('/diag/dump', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT id, name, category_id, is_active, status FROM medicines ORDER BY id DESC LIMIT 50');
+        const fs = require('fs');
+        fs.writeFileSync('diag_dump.json', JSON.stringify(rows, null, 2));
+        res.json(rows);
+    } catch (e) { res.status(500).json(e.message); }
+});
+
+module.exports = router;
