@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { FiShoppingCart, FiShield, FiAlertCircle, FiCheck, FiMinus, FiPlus, FiArrowLeft, FiInfo, FiTag } from 'react-icons/fi';
+import { FiShoppingCart, FiShield, FiAlertCircle, FiCheck, FiMinus, FiPlus, FiArrowLeft, FiInfo, FiTag, FiShoppingBag, FiUploadCloud, FiX } from 'react-icons/fi';
 import api from '../../lib/api';
 import { getImageUrl } from '../../lib/api';
 import MedicineImage from '../../components/MedicineImage';
@@ -12,6 +12,13 @@ export default function MedicineDetail() {
     const [medicine, setMedicine] = useState(null);
     const [loading, setLoading] = useState(true);
     const [qty, setQty] = useState(1);
+
+    // Quick Checkout State
+    const [showCheckout, setShowCheckout] = useState(false);
+    const [checkoutForm, setCheckoutForm] = useState({ name: '', phone: '', payment_method: 'transfer', screenshotFile: null });
+    const [ssPreview, setSsPreview] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const { addItem } = useCartStore();
     const navigate = useNavigate();
 
@@ -35,6 +42,35 @@ export default function MedicineDetail() {
     const handleAddToCart = () => {
         addItem(medicine, qty);
         toast.success(`Added ${qty} ${medicine.name} to cart`);
+    };
+
+    const handleScreenshotChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setCheckoutForm(f => ({ ...f, screenshotFile: file }));
+            const r = new FileReader(); r.onload = ev => setSsPreview(ev.target.result); r.readAsDataURL(file);
+        }
+    };
+
+    const handleQuickCheckout = async (e) => {
+        e.preventDefault();
+        if (checkoutForm.payment_method === 'transfer' && !checkoutForm.screenshotFile) return toast.error('Please upload your payment screenshot.');
+
+        setIsSubmitting(true);
+        try {
+            const formData = new FormData();
+            formData.append('customer_name', checkoutForm.name);
+            formData.append('customer_phone', checkoutForm.phone);
+            formData.append('payment_method', checkoutForm.payment_method);
+            formData.append('items_json', JSON.stringify([{ ...medicine, quantity: qty }]));
+            if (checkoutForm.screenshotFile) formData.append('screenshot', checkoutForm.screenshotFile);
+
+            const res = await api.post('/public/orders', formData);
+            toast.success('Order placed successfully!');
+            navigate(`/track-order/${res.data.order_number}`, { state: { justOrdered: true } });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to place order');
+        } finally { setIsSubmitting(false); }
     };
 
     const fmt = n => `ETB ${parseFloat(n || 0).toLocaleString()}`;
@@ -92,14 +128,19 @@ export default function MedicineDetail() {
 
                                 {!outOfStock && (
                                     <div className="flex flex-col sm:flex-row gap-4">
-                                        <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm w-36">
+                                        <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm w-full sm:w-36 flex-shrink-0">
                                             <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-10 h-10 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors"><FiMinus /></button>
                                             <input type="number" value={qty} onChange={(e) => setQty(Math.min(medicine.quantity, Math.max(1, parseInt(e.target.value) || 1)))} className="flex-1 text-center font-bold text-slate-800 bg-transparent border-none outline-none" min="1" max={medicine.quantity} />
                                             <button onClick={() => setQty(Math.min(medicine.quantity, qty + 1))} className="w-10 h-10 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors"><FiPlus /></button>
                                         </div>
-                                        <button onClick={handleAddToCart} className="flex-1 btn-primary py-3 justify-center text-lg shadow-lg hover:-translate-y-0.5 transition-all">
-                                            <FiShoppingCart size={20} /> Add to Cart
-                                        </button>
+                                        <div className="flex gap-2 flex-1">
+                                            <button onClick={handleAddToCart} className="flex-1 btn-outline border-slate-300 text-slate-700 hover:bg-slate-50 py-3 justify-center text-base shadow-sm">
+                                                <FiShoppingCart size={18} /> Add Cart
+                                            </button>
+                                            <button onClick={() => setShowCheckout(true)} className="flex-1 btn-primary bg-sky-500 hover:bg-sky-400 py-3 justify-center text-base shadow-lg transition-all hover:shadow-[0_0_20px_rgba(14,165,233,0.4)]">
+                                                <FiShoppingBag size={18} /> Buy Now
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -160,6 +201,59 @@ export default function MedicineDetail() {
                     </div>
                 </div>
             </div>
+
+            {/* QUICK CHECKOUT MODAL */}
+            {showCheckout && (
+                <div className="modal-overlay z-50 flex items-start sm:items-center justify-center py-10" onClick={() => setShowCheckout(false)}>
+                    <div className="modal-box w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setShowCheckout(false)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors"><FiX size={20} /></button>
+                        <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2"><FiShoppingBag className="text-sky-500" /> Direct Checkout</h2>
+
+                        <div className="bg-slate-50 rounded-xl p-4 mb-6 flex gap-4 items-center border border-slate-200">
+                            <MedicineImage src={medicine.image} name={medicine.name} className="w-16 h-16 object-contain rounded" fallbackSize={30} />
+                            <div className="flex-1">
+                                <div className="font-bold text-slate-800">{medicine.name}</div>
+                                <div className="text-sm text-slate-500">Qty: {qty} &times; {fmt(medicine.selling_price)}</div>
+                            </div>
+                            <div className="font-bold text-lg text-sky-600">{fmt(medicine.selling_price * qty)}</div>
+                        </div>
+
+                        <form onSubmit={handleQuickCheckout} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label className="form-label text-sm">Full Name *</label><input type="text" required value={checkoutForm.name} onChange={e => setCheckoutForm(f => ({ ...f, name: e.target.value }))} className="form-input bg-white" /></div>
+                                <div><label className="form-label text-sm">Phone Number *</label><input type="tel" required value={checkoutForm.phone} onChange={e => setCheckoutForm(f => ({ ...f, phone: e.target.value }))} className="form-input bg-white" /></div>
+                            </div>
+
+                            <div>
+                                <label className="form-label text-sm mb-3">Payment Method</label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {[{ id: 'transfer', l: 'Phone/Bank Transfer' }, { id: 'cash', l: 'Cash on Pickup' }].map(m => (
+                                        <label key={m.id} className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-colors ${checkoutForm.payment_method === m.id ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white'}`}>
+                                            <input type="radio" checked={checkoutForm.payment_method === m.id} onChange={() => setCheckoutForm(f => ({ ...f, payment_method: m.id }))} className="w-5 h-5 text-sky-600" />
+                                            <span className="font-bold text-slate-700">{m.l}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {checkoutForm.payment_method === 'transfer' && (
+                                <div className="border-2 border-dashed border-sky-300 bg-sky-50/30 rounded-xl p-6 text-center hover:border-sky-500 transition-colors cursor-pointer relative">
+                                    <input type="file" accept="image/*" onChange={handleScreenshotChange} required className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                    {ssPreview ? (
+                                        <div className="relative z-0"><img src={ssPreview} alt="Screenshot" className="mx-auto max-h-48 rounded shadow-md" /><p className="text-sm text-sky-600 mt-3 font-bold bg-white inline-block px-3 py-1 rounded-full border border-sky-200">Change payment screenshot</p></div>
+                                    ) : (
+                                        <div className="relative z-0 py-4"><FiUploadCloud className="mx-auto text-sky-400 mb-2" size={40} /><div className="font-bold text-slate-800 text-lg">Upload Transfer Screenshot *</div><div className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">Please transfer <b>{fmt(medicine.selling_price * qty)}</b> using CBE/Telebirr and upload the receipt image here.</div></div>
+                                    )}
+                                </div>
+                            )}
+
+                            <button type="submit" disabled={isSubmitting} className="w-full bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl py-4 font-bold text-lg transition-colors flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] disabled:opacity-70 disabled:cursor-not-allowed">
+                                {isSubmitting ? <div className="w-6 h-6 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : 'Confirm Order & Send Proof'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
