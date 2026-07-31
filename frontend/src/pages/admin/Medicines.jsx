@@ -1,14 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiFilter, FiDownload, FiAlertTriangle, FiPackage, FiX, FiCheck } from 'react-icons/fi';
-import { MdQrCode } from 'react-icons/md';
-import api, { getImageUrl } from '../../lib/api';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiDownload, FiAlertTriangle, FiPackage, FiX, FiCheck, FiFilter } from 'react-icons/fi';
+import api from '../../lib/api';
 import MedicineImage from '../../components/MedicineImage';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 
 const statusColor = { available: 'badge-success', out_of_stock: 'badge-danger', discontinued: 'badge-secondary' };
+
+const MAP_FIELDS = [
+    { key: 'name', label: 'Medicine Name', required: true },
+    { key: 'brand_name', label: 'Brand Name' },
+    { key: 'generic_name', label: 'Generic Name' },
+    { key: 'barcode', label: 'Barcode' },
+    { key: 'category_id', label: 'Category' },
+    { key: 'supplier_id', label: 'Supplier' },
+    { key: 'purchase_price', label: 'Purchase Price' },
+    { key: 'selling_price', label: 'Selling Price' },
+    { key: 'quantity', label: 'Quantity (Stock)' },
+    { key: 'min_stock_level', label: 'Min Stock Level' },
+    { key: 'expiry_date', label: 'Expiry Date' },
+    { key: 'description', label: 'Description' },
+];
 
 export default function Medicines() {
     const [medicines, setMedicines] = useState([]);
@@ -43,40 +57,22 @@ export default function Medicines() {
 
     const handleSearch = (e) => { e.preventDefault(); setFilters(f => ({ ...f, page: 1 })); fetchMedicines(); };
 
-    const MAP_FIELDS = [
-        { key: 'name', label: 'Medicine Name', required: true },
-        { key: 'brand_name', label: 'Brand Name' },
-        { key: 'generic_name', label: 'Generic Name' },
-        { key: 'barcode', label: 'Barcode' },
-        { key: 'category_id', label: 'Category' },
-        { key: 'supplier_id', label: 'Supplier' },
-        { key: 'purchase_price', label: 'Purchase Price' },
-        { key: 'selling_price', label: 'Selling Price' },
-        { key: 'quantity', label: 'Quantity (Stock)' },
-        { key: 'min_stock_level', label: 'Min Stock Level' },
-        { key: 'expiry_date', label: 'Expiry Date (YYYY-MM-DD)' },
-        { key: 'description', label: 'Description' }
-    ];
-
     const handleFileSelect = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
-        // Ensure file is Excel
         if (!file.name.match(/\.(xlsx|xls|csv)$/)) {
             toast.error('Please upload a valid Excel file (.xlsx, .xls, .csv)');
             e.target.value = null;
             return;
         }
-
         try {
             const data = await file.arrayBuffer();
             const workbook = XLSX.read(data);
-            const workbookSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(workbookSheet);
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
             if (jsonData.length === 0) {
-                toast.error('The uploaded file is empty or formatted incorrectly.');
+                toast.error('The uploaded file is empty or has no readable rows.');
                 e.target.value = null;
                 return;
             }
@@ -85,29 +81,38 @@ export default function Medicines() {
             setPreviewHeaders(headers);
             setPreviewData(jsonData);
 
-            // Auto mapping
+            // Auto-map columns by comparing normalized names
             const autoMap = {};
             MAP_FIELDS.forEach(field => {
-                const match = headers.find(h => h.toLowerCase().replace(/[^a-z0-9]/g, '') === field.key.toLowerCase().replace(/[^a-z0-9]/g, ''));
-                if (match) autoMap[field.key] = match;
+                const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const match = headers.find(h => norm(h) === norm(field.key));
+                if (match) { autoMap[field.key] = match; return; }
+                // Fuzzy match for common aliases
+                if (field.key === 'name') {
+                    const m = headers.find(h => /name|medicine|product|item|drug/i.test(h));
+                    if (m) autoMap.name = m;
+                }
+                if (field.key === 'selling_price') {
+                    const m = headers.find(h => /sell|price|retail/i.test(h));
+                    if (m) autoMap.selling_price = m;
+                }
+                if (field.key === 'purchase_price') {
+                    const m = headers.find(h => /cost|purchase|buy/i.test(h));
+                    if (m) autoMap.purchase_price = m;
+                }
+                if (field.key === 'quantity') {
+                    const m = headers.find(h => /qty|stock|quantity|inventory/i.test(h));
+                    if (m) autoMap.quantity = m;
+                }
+                if (field.key === 'category_id') {
+                    const m = headers.find(h => /categ/i.test(h));
+                    if (m) autoMap.category_id = m;
+                }
             });
-            // Try to auto-map 'name' more aggressively
-            if (!autoMap.name) {
-                const nameMatch = headers.find(h => /name|medicine|product|item/i.test(h));
-                if (nameMatch) autoMap.name = nameMatch;
-            }
-            if (!autoMap.purchase_price) {
-                const costMatch = headers.find(h => /cost|purchase/i.test(h));
-                if (costMatch) autoMap.purchase_price = costMatch;
-            }
-            if (!autoMap.selling_price) {
-                const priceMatch = headers.find(h => /price|selling|retail/i.test(h));
-                if (priceMatch) autoMap.selling_price = priceMatch;
-            }
             setColumnMap(autoMap);
-        } catch (error) {
-            console.error('File read error:', error);
-            toast.error('Failed to parse file. Please check file format.');
+        } catch (err) {
+            console.error(err);
+            toast.error('Failed to read file. Please check the format.');
         } finally {
             e.target.value = null;
         }
@@ -116,12 +121,11 @@ export default function Medicines() {
     const confirmImport = async () => {
         if (!previewData) return;
         if (!columnMap.name) {
-            toast.error("Please map the Medicine Name column before importing.");
+            toast.error('Please map the "Medicine Name" column before importing.');
             return;
         }
-
         const mappedData = previewData.map(row => {
-            const newRow = { ...row }; // keep original keys just in case
+            const newRow = {};
             Object.entries(columnMap).forEach(([sysKey, excelKey]) => {
                 if (excelKey && row[excelKey] !== undefined) {
                     newRow[sysKey] = row[excelKey];
@@ -129,14 +133,13 @@ export default function Medicines() {
             });
             return newRow;
         });
-
         setImporting(true);
         try {
             const res = await api.post('/medicines/import', { medicines: mappedData });
             if (res.data.errors && res.data.errors.length > 0) {
-                toast.success(`Imported ${res.data.count} medicines (${res.data.errors.length} failed: ${res.data.errors.map(e => e.name).join(', ')})`);
+                toast.success(`Imported ${res.data.count} medicines (${res.data.errors.length} failed)`);
             } else {
-                toast.success(`Imported ${res.data.count} medicines successfully!`);
+                toast.success(`✅ Imported ${res.data.count} medicines successfully!`);
             }
             fetchMedicines();
             setPreviewData(null);
@@ -160,48 +163,80 @@ export default function Medicines() {
     const fmt = (n) => `ETB ${parseFloat(n || 0).toLocaleString()}`;
 
     const handleDownloadTemplate = () => {
-        const headers = [
-            { name: 'Paracetamol 500mg', brand_name: 'Panadol', generic_name: 'Acetaminophen', barcode: '600123456789', purchase_price: 500, selling_price: 800, quantity: 100, min_stock_level: 20, category: 'Pain Relief', supplier: 'Ethio Pharma', description: 'Pain reliever and fever reducer.', strength: '500mg', dosage_form: 'Tablet', unit: 'Pack', image: 'https://example.com/paracetamol.jpg' },
-            { name: 'Amoxicillin 250mg', brand_name: 'Amoxil', generic_name: 'Amoxicillin', barcode: '600987654321', purchase_price: 1200, selling_price: 1500, quantity: 50, min_stock_level: 10, category: 'Prescription Medicines', supplier: '', description: 'Antibiotic used to treat bacterial infections.', strength: '250mg', dosage_form: 'Capsule', unit: 'Pack', image: '' }
+        const rows = [
+            { name: 'Paracetamol 500mg', brand_name: 'Panadol', generic_name: 'Acetaminophen', barcode: '600123456789', purchase_price: 500, selling_price: 800, quantity: 100, min_stock_level: 20, category_id: 'Pain Relief', supplier_id: 'Ethio Pharma', description: 'Pain reliever and fever reducer.', expiry_date: '2026-12-31' },
+            { name: 'Amoxicillin 250mg', brand_name: 'Amoxil', generic_name: 'Amoxicillin', barcode: '600987654321', purchase_price: 1200, selling_price: 1500, quantity: 50, min_stock_level: 10, category_id: 'Antibiotics', supplier_id: '', description: 'Antibiotic for bacterial infections.', expiry_date: '2027-06-30' }
         ];
-        const ws = XLSX.utils.json_to_sheet(headers);
+        const ws = XLSX.utils.json_to_sheet(rows);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Template");
-        XLSX.writeFile(wb, "Medicine_Import_Template.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, 'Template');
+        XLSX.writeFile(wb, 'Medicine_Import_Template.xlsx');
     };
 
     return (
         <div className="space-y-5">
-            {/* Import Preview Modal */}
+
+            {/* ============================================================
+                IMPORT MODAL — fully inline-styled so it always renders
+            ============================================================ */}
             {previewData && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
-                        <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div style={{
+                    position: 'fixed', inset: 0, zIndex: 9999,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(15,23,42,0.6)', padding: '16px',
+                    backdropFilter: 'blur(4px)'
+                }}>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        style={{
+                            background: '#fff', borderRadius: '14px',
+                            boxShadow: '0 30px 80px rgba(0,0,0,0.3)',
+                            width: '100%', maxWidth: '1140px',
+                            height: '88vh', display: 'flex', flexDirection: 'column',
+                            overflow: 'hidden', border: '1px solid #e2e8f0'
+                        }}
+                    >
+                        {/* --- Header --- */}
+                        <div style={{ padding: '18px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f1f5f9', flexShrink: 0 }}>
                             <div>
-                                <h3 className="text-xl font-bold text-slate-800">Map & Preview Excel Import</h3>
-                                <p className="text-sm text-slate-500 mt-1">{previewData.length} records parsed from file. Please map the columns accurately.</p>
+                                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>
+                                    📊 Excel Import — Map Columns &amp; Preview Data
+                                </h3>
+                                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#475569' }}>
+                                    <strong style={{ color: '#0284c7' }}>{previewData.length} rows</strong> read from file &nbsp;·&nbsp; {previewHeaders.length} columns detected
+                                </p>
                             </div>
-                            <button onClick={() => setPreviewData(null)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                                <FiX size={24} />
+                            <button onClick={() => setPreviewData(null)} style={{ border: 'none', background: '#fee2e2', color: '#dc2626', borderRadius: '8px', padding: '8px 12px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px' }}>
+                                <FiX size={16} /> Close
                             </button>
                         </div>
 
-                        <div className="p-5 border-b border-slate-200 bg-white">
-                            <h4 className="font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                                <FiFilter className="text-sky-500" /> Map Columns
-                            </h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
+                        {/* --- Column Mapper --- */}
+                        <div style={{ padding: '16px 24px', borderBottom: '2px solid #e2e8f0', background: '#fff', flexShrink: 0 }}>
+                            <p style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <FiFilter size={14} style={{ color: '#0284c7' }} />
+                                Step 1 — Map your Excel columns to system fields&nbsp;
+                                <span style={{ fontWeight: 400, color: '#94a3b8' }}>(red border = required, not yet mapped)</span>
+                            </p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(175px, 1fr))', gap: '10px 18px' }}>
                                 {MAP_FIELDS.map(f => (
-                                    <div key={f.key} className="flex flex-col gap-1.5">
-                                        <label className="text-xs font-semibold text-slate-600 flex justify-between">
-                                            <span>{f.label} {f.required && <span className="text-red-500">*</span>}</span>
+                                    <div key={f.key}>
+                                        <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                            {f.label}{f.required && <span style={{ color: '#ef4444' }}> *</span>}
                                         </label>
                                         <select
-                                            className={`form-input text-sm py-1.5 ${f.required && !columnMap[f.key] ? 'border-red-300 bg-red-50' : 'border-slate-200'}`}
                                             value={columnMap[f.key] || ''}
-                                            onChange={(e) => setColumnMap(prev => ({ ...prev, [f.key]: e.target.value }))}
+                                            onChange={e => setColumnMap(prev => ({ ...prev, [f.key]: e.target.value }))}
+                                            style={{
+                                                width: '100%', padding: '6px 8px', fontSize: '12px',
+                                                border: `2px solid ${f.required && !columnMap[f.key] ? '#fca5a5' : '#94a3b8'}`,
+                                                borderRadius: '6px',
+                                                background: f.required && !columnMap[f.key] ? '#fff1f2' : '#f8fafc',
+                                                color: '#0f172a', outline: 'none', cursor: 'pointer'
+                                            }}
                                         >
-                                            <option value="">-- Ignore --</option>
+                                            <option value="">— Ignore this field —</option>
                                             {previewHeaders.map(h => (
                                                 <option key={h} value={h}>{h}</option>
                                             ))}
@@ -211,38 +246,63 @@ export default function Medicines() {
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-auto p-0 bg-slate-50">
-                            <table className="w-full text-sm text-left border-collapse">
-                                <thead className="text-xs uppercase bg-slate-200 text-slate-600 sticky top-0 shadow-sm z-10">
-                                    <tr>
-                                        {previewHeaders.map(h => (
-                                            <th key={h} className="px-5 py-3 font-semibold border-b border-slate-300 whitespace-nowrap">{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {previewData.slice(0, 30).map((row, idx) => (
-                                        <tr key={idx} className="border-b border-slate-200 bg-white hover:bg-sky-50 transition-colors">
+                        {/* --- Data Preview Table --- */}
+                        <div style={{ flex: 1, overflow: 'auto', background: '#f8fafc' }}>
+                            <div style={{ background: '#0f172a', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 10 }}>
+                                <span style={{ color: '#38bdf8', fontWeight: 700, fontSize: '13px' }}>📋 Step 2 — Verify Data Preview</span>
+                                <span style={{ color: '#64748b', fontSize: '12px' }}>Showing first {Math.min(50, previewData.length)} of {previewData.length} rows</span>
+                            </div>
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '600px' }}>
+                                    <thead>
+                                        <tr style={{ background: '#1e293b' }}>
+                                            <th style={{ padding: '10px 14px', color: '#64748b', fontWeight: 700, fontSize: '11px', textAlign: 'center', borderRight: '1px solid #334155', minWidth: '36px', position: 'sticky', left: 0, background: '#1e293b' }}>#</th>
                                             {previewHeaders.map(h => (
-                                                <td key={h} className="px-5 py-2 whitespace-nowrap truncate max-w-[200px]" title={row[h]}>
-                                                    {row[h] !== undefined && row[h] !== null ? String(row[h]) : '-'}
-                                                </td>
+                                                <th key={h} style={{ padding: '10px 14px', color: '#e2e8f0', fontWeight: 600, fontSize: '11px', textAlign: 'left', borderRight: '1px solid #334155', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                    {h}
+                                                </th>
                                             ))}
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            {previewData.length > 30 && (
-                                <div className="text-center py-3 text-sm font-medium text-amber-700 bg-amber-50 border-t border-amber-100">
-                                    Showing first 30 rows. {previewData.length - 30} more rows are hidden but will be imported.
+                                    </thead>
+                                    <tbody>
+                                        {previewData.slice(0, 50).map((row, idx) => (
+                                            <tr key={idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}
+                                                onMouseEnter={e => e.currentTarget.style.background = '#e0f2fe'}
+                                                onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? '#ffffff' : '#f1f5f9'}
+                                            >
+                                                <td style={{ padding: '7px 14px', color: '#94a3b8', fontWeight: 700, fontSize: '11px', textAlign: 'center', borderRight: '1px solid #e2e8f0', position: 'sticky', left: 0, background: 'inherit' }}>{idx + 1}</td>
+                                                {previewHeaders.map(h => {
+                                                    const val = row[h];
+                                                    const display = val !== null && val !== '' ? String(val) : null;
+                                                    return (
+                                                        <td key={h} title={display || ''} style={{ padding: '7px 14px', color: display ? '#1e293b' : '#cbd5e1', borderRight: '1px solid #e2e8f0', whiteSpace: 'nowrap', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            {display || '—'}
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {previewData.length > 50 && (
+                                <div style={{ textAlign: 'center', padding: '12px', fontSize: '13px', color: '#92400e', background: '#fef3c7', borderTop: '1px solid #fde68a', fontWeight: 600 }}>
+                                    ⚠️ Showing first 50 rows — <strong>{previewData.length - 50} more</strong> rows will also be imported when you confirm.
                                 </div>
                             )}
                         </div>
 
-                        <div className="p-5 border-t border-slate-200 flex justify-end gap-3 bg-slate-50/50">
-                            <button onClick={() => setPreviewData(null)} className="btn-outline px-6">Cancel</button>
-                            <button onClick={confirmImport} disabled={importing} className="btn-primary px-6 flex items-center gap-2">
-                                {importing ? 'Importing...' : <><FiCheck size={18} /> Confirm & Import All</>}
+                        {/* --- Footer Actions --- */}
+                        <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '12px', background: '#f8fafc', flexShrink: 0 }}>
+                            <button onClick={() => setPreviewData(null)} style={{ padding: '10px 22px', border: '1.5px solid #cbd5e1', background: '#fff', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, color: '#475569' }}>
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmImport}
+                                disabled={importing || !columnMap.name}
+                                style={{ padding: '10px 26px', border: 'none', background: columnMap.name ? '#0284c7' : '#94a3b8', color: '#fff', borderRadius: '8px', cursor: columnMap.name ? 'pointer' : 'not-allowed', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', opacity: importing ? 0.7 : 1 }}
+                            >
+                                {importing ? '⏳ Importing...' : <><FiCheck size={17} /> Confirm &amp; Import All {previewData.length} Rows</>}
                             </button>
                         </div>
                     </motion.div>
@@ -332,12 +392,7 @@ export default function Medicines() {
                                         <td>
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-sky-50 rounded-lg overflow-hidden flex-shrink-0">
-                                                    <MedicineImage
-                                                        src={m.image}
-                                                        name={m.name}
-                                                        className="w-full h-full object-cover"
-                                                        fallbackSize={40}
-                                                    />
+                                                    <MedicineImage src={m.image} name={m.name} className="w-full h-full object-cover" fallbackSize={40} />
                                                 </div>
                                                 <div>
                                                     <div className="font-semibold text-slate-800 text-sm">{m.name}</div>
