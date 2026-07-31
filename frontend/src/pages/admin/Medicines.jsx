@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiDownload, FiAlertTriangle, FiPackage, FiX, FiCheck, FiFilter } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiDownload, FiAlertTriangle, FiPackage, FiX, FiCheck, FiFilter, FiClock, FiTrash } from 'react-icons/fi';
 import api from '../../lib/api';
 import MedicineImage from '../../components/MedicineImage';
 import toast from 'react-hot-toast';
@@ -34,6 +34,11 @@ export default function Medicines() {
     const [previewData, setPreviewData] = useState(null);
     const [previewHeaders, setPreviewHeaders] = useState([]);
     const [columnMap, setColumnMap] = useState({});
+    const [importHistory, setImportHistory] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('abpharma_import_history') || '[]'); }
+        catch { return []; }
+    });
+    const [importFileName, setImportFileName] = useState('');
     const navigate = useNavigate();
     const searchRef = useRef();
     const fileRef = useRef();
@@ -65,6 +70,7 @@ export default function Medicines() {
             e.target.value = null;
             return;
         }
+        setImportFileName(file.name);
         try {
             const data = await file.arrayBuffer();
             const workbook = XLSX.read(data);
@@ -136,11 +142,26 @@ export default function Medicines() {
         setImporting(true);
         try {
             const res = await api.post('/medicines/import', { medicines: mappedData });
-            if (res.data.errors && res.data.errors.length > 0) {
-                toast.success(`Imported ${res.data.count} medicines (${res.data.errors.length} failed)`);
+            const failCount = res.data.errors ? res.data.errors.length : 0;
+            const successCount = res.data.count || 0;
+            if (failCount > 0) {
+                toast.success(`Imported ${successCount} medicines (${failCount} failed)`);
             } else {
-                toast.success(`✅ Imported ${res.data.count} medicines successfully!`);
+                toast.success(`✅ Imported ${successCount} medicines successfully!`);
             }
+            // Save to import history
+            const historyEntry = {
+                id: Date.now(),
+                fileName: importFileName,
+                date: new Date().toISOString(),
+                totalRows: previewData.length,
+                successCount,
+                failCount,
+                errors: res.data.errors || [],
+            };
+            const newHistory = [historyEntry, ...importHistory].slice(0, 20);
+            setImportHistory(newHistory);
+            localStorage.setItem('abpharma_import_history', JSON.stringify(newHistory));
             fetchMedicines();
             setPreviewData(null);
         } catch (error) {
@@ -465,6 +486,68 @@ export default function Medicines() {
                     </div>
                 )}
             </div>
+
+            {/* ── Import History ───────────────────────────────── */}
+            {importHistory.length > 0 && (
+                <div className="card overflow-hidden">
+                    {/* Header */}
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <FiClock size={18} style={{ color: '#0284c7' }} />
+                            <span style={{ fontWeight: 700, fontSize: '15px', color: '#1e293b' }}>Import History</span>
+                            <span style={{ background: '#e0f2fe', color: '#0369a1', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', fontWeight: 600 }}>{importHistory.length} imports</span>
+                        </div>
+                        <button
+                            onClick={() => { setImportHistory([]); localStorage.removeItem('abpharma_import_history'); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', border: '1.5px solid #fecaca', background: '#fff1f2', color: '#dc2626', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                        >
+                            <FiTrash size={13} /> Clear History
+                        </button>
+                    </div>
+
+                    {/* Table */}
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                            <thead>
+                                <tr style={{ background: '#f1f5f9' }}>
+                                    {['#', 'File Name', 'Imported At', 'Total Rows', 'Imported ✅', 'Failed ❌', 'Status'].map(h => (
+                                        <th key={h} style={{ padding: '10px 16px', color: '#64748b', fontWeight: 700, fontSize: '11px', textAlign: 'left', borderBottom: '1px solid #e2e8f0', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {importHistory.map((entry, idx) => {
+                                    const isSuccess = entry.failCount === 0;
+                                    const isPartial = entry.successCount > 0 && entry.failCount > 0;
+                                    const isFailed = entry.successCount === 0;
+                                    const statusLabel = isFailed ? 'Failed' : isPartial ? 'Partial' : 'Success';
+                                    const statusStyle = isFailed
+                                        ? { background: '#fee2e2', color: '#dc2626' }
+                                        : isPartial
+                                            ? { background: '#fef3c7', color: '#d97706' }
+                                            : { background: '#dcfce7', color: '#16a34a' };
+                                    const formattedDate = new Date(entry.date).toLocaleString();
+                                    return (
+                                        <tr key={entry.id} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#fff' : '#f8fafc' }}>
+                                            <td style={{ padding: '10px 16px', color: '#94a3b8', fontWeight: 700, fontSize: '12px' }}>{importHistory.length - idx}</td>
+                                            <td style={{ padding: '10px 16px', fontWeight: 600, color: '#334155', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={entry.fileName}>
+                                                📄 {entry.fileName}
+                                            </td>
+                                            <td style={{ padding: '10px 16px', color: '#64748b', whiteSpace: 'nowrap' }}>{formattedDate}</td>
+                                            <td style={{ padding: '10px 16px', color: '#334155', fontWeight: 600, textAlign: 'center' }}>{entry.totalRows}</td>
+                                            <td style={{ padding: '10px 16px', color: '#16a34a', fontWeight: 700, textAlign: 'center', fontSize: '14px' }}>{entry.successCount}</td>
+                                            <td style={{ padding: '10px 16px', color: entry.failCount > 0 ? '#dc2626' : '#94a3b8', fontWeight: entry.failCount > 0 ? 700 : 400, textAlign: 'center', fontSize: '14px' }}>{entry.failCount}</td>
+                                            <td style={{ padding: '10px 16px' }}>
+                                                <span style={{ ...statusStyle, borderRadius: '20px', padding: '3px 12px', fontSize: '11px', fontWeight: 700 }}>{statusLabel}</span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
