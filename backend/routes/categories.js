@@ -5,7 +5,14 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
     try {
-        const [rows] = await pool.execute('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order, name');
+        const [rows] = await pool.execute(`
+            SELECT c.*, COUNT(m.id) as medicine_count 
+            FROM categories c
+            LEFT JOIN medicines m ON c.id = m.category_id AND m.is_active = 1
+            WHERE c.is_active = 1 
+            GROUP BY c.id 
+            ORDER BY c.sort_order, c.name
+        `);
         res.json({ success: true, data: rows });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error.' });
