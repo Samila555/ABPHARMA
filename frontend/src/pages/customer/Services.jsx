@@ -23,11 +23,6 @@ const SERVICES = [
         features: ['Certified Experts', 'Private Sessions', 'Follow-up Care'],
     },
     {
-        icon: Syringe, title: 'Vaccinations & Boosters',
-        desc: 'Stay protected. Safe, sterile, and professional administration of vaccines by licensed healthcare providers.',
-        features: ['Walk-in Available', 'All Standard Vaccines'],
-    },
-    {
         icon: Activity, title: 'Vitals & Screening',
         desc: 'Instant blood pressure and blood glucose checks right at the pharmacy, complete with personalized health insights.',
         features: ['Instant Results', 'Health Report', 'Diet Advice'],

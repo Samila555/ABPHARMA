@@ -62,7 +62,6 @@ const SOCIAL_ICONS = [
 const QUICK_LINKS = [
     { to: '/', label: 'Home' },
     { to: '/medicines', label: 'Shop Medicines' },
-    { to: '/services', label: 'Our Services' },
     { to: '/track-order', label: 'Track Order' },
     { to: '/cart', label: 'My Cart' },
 ];

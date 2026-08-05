@@ -24,7 +24,6 @@ const NAV_LINKS = [
     { name: 'Home', path: '/', icon: Home },
     { name: 'Medicines', path: '/medicines', icon: Pill },
     { name: 'Categories', path: '/categories', icon: LayoutGrid },
-    { name: 'Services', path: '/services', icon: Stethoscope },
     { name: 'Contact', path: '/contact', icon: MapPin },
 ];
 
