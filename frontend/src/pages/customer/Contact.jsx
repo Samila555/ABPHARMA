@@ -294,12 +294,12 @@ export default function Contact() {
                                 <h3 className="text-base font-bold text-[#0F172A] mb-4">Follow Us</h3>
                                 <div className="flex flex-wrap gap-3">
                                     {[
-                                        { icon: Globe, label: 'Facebook', color: '#1877F2' },
-                                        { icon: AtSign, label: 'Instagram', color: '#E4405F' },
-                                        { icon: MessageCircle, label: 'Telegram', color: '#0088cc' },
-                                        { icon: Share2, label: 'LinkedIn', color: '#0A66C2' },
+                                        { icon: Globe, label: 'Facebook', color: '#1877F2', link: 'https://facebook.com' },
+                                        { icon: AtSign, label: 'Instagram', color: '#E4405F', link: 'https://instagram.com' },
+                                        { icon: MessageCircle, label: 'Telegram', color: '#0088cc', link: 'https://t.me/abelzf' },
+                                        { icon: Share2, label: 'LinkedIn', color: '#0A66C2', link: 'https://linkedin.com' },
                                     ].map((s, i) => (
-                                        <a key={i} href="#" aria-label={s.label}
+                                        <a key={i} href={s.link} target="_blank" rel="noopener noreferrer" aria-label={s.label}
                                             className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-xs font-semibold text-slate-600 hover:border-slate-200 hover:shadow-sm transition-all duration-200"
                                             onMouseEnter={e => { e.currentTarget.style.borderColor = s.color + '40'; e.currentTarget.style.color = s.color; }}
                                             onMouseLeave={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.color = ''; }}
