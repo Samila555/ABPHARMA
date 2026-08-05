@@ -391,8 +391,8 @@ export default function POS() {
                                             <div className="w-full sm:w-1/2 flex flex-col gap-3 justify-center items-center p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300">
                                                 <h3 className="font-semibold text-slate-700 text-sm">Payment Screenshot</h3>
                                                 {o.payment_screenshot ? (
-                                                    <a href={o.payment_screenshot.startsWith('/') ? o.payment_screenshot : `/${o.payment_screenshot}`} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded shadow-sm">
-                                                        <img src={o.payment_screenshot.startsWith('/') ? o.payment_screenshot : `/${o.payment_screenshot}`} alt="Payment Proof" className="max-h-40 w-full object-cover transition-transform group-hover:scale-105" />
+                                                    <a href={o.payment_screenshot} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded shadow-sm">
+                                                        <img src={o.payment_screenshot} alt="Payment Proof" className="max-h-40 w-full object-cover transition-transform group-hover:scale-105" />
                                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-medium text-sm backdrop-blur-[2px]">
                                                             View Full Screen
                                                         </div>

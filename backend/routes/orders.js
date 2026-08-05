@@ -154,17 +154,31 @@ router.patch('/:id/approve', authenticate, async (req, res) => {
         // Mark order as completed and paid
         await conn.execute('UPDATE orders SET status=?, payment_status=?, cashier_id=? WHERE id=?', ['completed', 'paid', req.user.id, orderId]);
 
-        // Deduct inventory NOW
+        // Deduct inventory NOW (handle both medicine_id and name-based lookup)
         const [items] = await conn.execute('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
         for (const item of items) {
-            if (item.medicine_id) {
-                const [med] = await conn.execute('SELECT quantity FROM medicines WHERE id = ?', [item.medicine_id]);
-                const newQty = Math.max(0, (med[0]?.quantity || 0) - item.quantity);
-                await conn.execute('UPDATE medicines SET quantity = ? WHERE id = ?', [newQty, item.medicine_id]);
+            // Resolve medicine_id — either direct or via name lookup
+            let medId = item.medicine_id;
+            if (!medId && item.medicine_name) {
+                const [found] = await conn.execute(
+                    'SELECT id FROM medicines WHERE name = ? LIMIT 1',
+                    [item.medicine_name]
+                );
+                if (found.length) medId = found[0].id;
+            }
+
+            if (medId) {
+                const [med] = await conn.execute('SELECT quantity FROM medicines WHERE id = ?', [medId]);
+                const currentQty = med[0]?.quantity || 0;
+                const newQty = Math.max(0, currentQty - item.quantity);
+                await conn.execute('UPDATE medicines SET quantity = ? WHERE id = ?', [newQty, medId]);
                 await conn.execute(
                     'INSERT INTO inventory_transactions (medicine_id, transaction_type, quantity, balance_before, balance_after, reference_type, reference_id, created_by) VALUES (?,?,?,?,?,?,?,?)',
-                    [item.medicine_id, 'stock_out', item.quantity, med[0]?.quantity || 0, newQty, 'order', orderId, req.user.id]
+                    [medId, 'stock_out', item.quantity, currentQty, newQty, 'order', orderId, req.user.id]
                 );
+                console.log(`Stock deducted: medicine ${medId}, qty -${item.quantity} (${currentQty} → ${newQty})`);
+            } else {
+                console.warn(`Could not find medicine for order item: ${item.medicine_name}`);
             }
         }
 
