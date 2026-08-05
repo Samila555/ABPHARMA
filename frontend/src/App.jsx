@@ -10,7 +10,6 @@ import Home from './pages/customer/Home';
 import MedicineSearch from './pages/customer/MedicineSearch';
 import CustomerCategories from './pages/customer/Categories';
 import MedicineDetail from './pages/customer/MedicineDetail';
-import Services from './pages/customer/Services';
 import Contact from './pages/customer/Contact';
 import Cart from './pages/customer/Cart';
 import Checkout from './pages/customer/Checkout';
@@ -76,7 +75,6 @@ function App() {
           <Route path="medicines" element={<MedicineSearch />} />
           <Route path="medicines/:id" element={<MedicineDetail />} />
           <Route path="categories" element={<CustomerCategories />} />
-          <Route path="services" element={<Services />} />
           <Route path="contact" element={<Contact />} />
           <Route path="cart" element={<Cart />} />
           <Route path="checkout" element={<Checkout />} />

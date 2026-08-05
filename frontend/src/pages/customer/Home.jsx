@@ -592,14 +592,7 @@ export default function Home() {
                             }}>
                                 Contact Us Today <FiArrowRight />
                             </Link>
-                            <Link to="/services" style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 8,
-                                background: 'white', border: '2px solid #e2e8f0',
-                                color: '#475569', padding: '13px 28px', borderRadius: 12,
-                                fontWeight: 700, fontSize: 14, textDecoration: 'none',
-                            }}>
-                                Our Services
-                            </Link>
+
                         </div>
                     </motion.div>
                 </div>
