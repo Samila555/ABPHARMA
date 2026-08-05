@@ -9,12 +9,9 @@ export default function POS() {
     const [cart, setCart] = useState([]);
     const [search, setSearch] = useState('');
     const [results, setResults] = useState([]);
-    const [customer, setCustomer] = useState(null);
-    const [customerSearch, setCustomerSearch] = useState('');
-    const [customers, setCustomers] = useState([]);
-    const [discount, setDiscount] = useState(0);
-    const [discountType, setDiscountType] = useState('fixed');
-    const [taxRate, setTaxRate] = useState(0);
+    const discount = 0;
+    const discountType = 'fixed';
+    const taxRate = 0;
     const [paymentMethod, setPaymentMethod] = useState('cash');
     const [amountPaid, setAmountPaid] = useState('');
     const [walkinScreenshot, setWalkinScreenshot] = useState(null); // Optional base64 for Walk-in POS
@@ -120,15 +117,15 @@ export default function POS() {
         setLoading(true);
         try {
             const payload = {
-                customer_id: customer?.id || null,
-                customer_name: customer?.name || 'Walk-in Customer',
-                customer_phone: customer?.phone || '',
+                customer_id: null,
+                customer_name: 'Walk-in Customer',
+                customer_phone: '',
                 order_type: 'pos',
                 items: cart,
                 payment_method: paymentMethod,
-                discount,
-                discount_type: discountType,
-                tax_rate: taxRate,
+                discount: 0,
+                discount_type: 'fixed',
+                tax_rate: 0,
                 delivery_type: 'pickup',
                 amount_paid: parseFloat(amountPaid || total),
                 payment_screenshot: paymentMethod === 'transfer' ? walkinScreenshot : null
@@ -137,11 +134,7 @@ export default function POS() {
             toast.success(`Sale completed! Order: ${res.data.order_number}`);
             printReceipt(res.data.order_number);
             setCart([]);
-            setCustomer(null);
-            setCustomerSearch('');
             setAmountPaid('');
-            setDiscount(0);
-            setTaxRate(0);
             setWalkinScreenshot(null);
         } catch (err) {
             toast.error(err.response?.data?.message || 'Checkout failed');
@@ -155,13 +148,11 @@ export default function POS() {
       <style>body{font-family:monospace;padding:20px;font-size:12px}h2{text-align:center}.line{border-top:1px dashed #000;margin:8px 0}.total{font-size:14px;font-weight:bold}.row{display:flex;justify-content:space-between}</style>
       </head><body>
       <h2>AB PHARMA</h2><p style="text-align:center">Smart Pharmacy<br>Tel: +234-000-0000<br>${new Date().toLocaleString()}</p>
-      <div class="line"></div><p>Order: ${orderNumber}</p><p>Customer: ${customer?.name || 'Walk-in'}</p>
+      <div class="line"></div><p>Order: ${orderNumber}</p><p>Customer: Walk-in</p>
       <div class="line"></div>
       ${cart.map(i => `<div class="row"><span>${i.medicine_name} x${i.quantity}</span><span>ETB ${(i.unit_price * i.quantity).toLocaleString()}</span></div>`).join('')}
       <div class="line"></div>
       <div class="row"><span>Subtotal:</span><span>${fmt(subtotal)}</span></div>
-      ${discountAmt > 0 ? `<div class="row"><span>Discount:</span><span>-${fmt(discountAmt)}</span></div>` : ''}
-      ${taxAmt > 0 ? `<div class="row"><span>Tax:</span><span>+${fmt(taxAmt)}</span></div>` : ''}
       <div class="line"></div>
       <div class="row total"><span>TOTAL:</span><span>${fmt(total)}</span></div>
       <div class="row"><span>Paid:</span><span>${fmt(parseFloat(amountPaid || total))}</span></div>
@@ -276,68 +267,9 @@ export default function POS() {
                     </div>
 
                     <div className="w-80 flex flex-col gap-4">
-                        <div className="card p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                                <FiUser size={15} className="text-slate-500" />
-                                <h3 className="font-semibold text-slate-700 text-sm">Customer (Optional)</h3>
-                            </div>
-                            {customer ? (
-                                <div className="flex items-center gap-2 bg-sky-50 border border-sky-200 rounded-lg p-2.5">
-                                    <div className="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center text-sky-700 font-bold text-sm">
-                                        {customer.name.charAt(0)}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="font-semibold text-sm text-slate-800">{customer.name}</div>
-                                        <div className="text-xs text-slate-500">{customer.phone}</div>
-                                    </div>
-                                    <button onClick={() => setCustomer(null)} className="text-slate-400 hover:text-red-500"><FiX /> </button>
-                                </div>
-                            ) : (
-                                <div className="relative">
-                                    <input type="text" placeholder="Search customer name or phone..."
-                                        value={customerSearch} onChange={e => setCustomerSearch(e.target.value)}
-                                        className="form-input text-sm" />
-                                    {customers.length > 0 && (
-                                        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-20">
-                                            {customers.map(c => (
-                                                <button key={c.id} onClick={() => { setCustomer(c); setCustomerSearch(''); setCustomers([]); }}
-                                                    className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 text-left">
-                                                    <div className="w-7 h-7 bg-sky-100 rounded-full flex items-center justify-center text-sky-700 font-bold text-xs">{c.name.charAt(0)}</div>
-                                                    <div><div className="text-sm font-medium">{c.name}</div><div className="text-xs text-slate-400">{c.phone}</div></div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Discount & Tax */}
-                        <div className="card p-4 space-y-3">
-                            <div className="flex gap-2">
-                                <div className="flex-1">
-                                    <label className="form-label text-xs">Discount</label>
-                                    <input type="number" min="0" value={discount} onChange={e => setDiscount(e.target.value)} className="form-input text-sm" placeholder="0" />
-                                </div>
-                                <div>
-                                    <label className="form-label text-xs">Type</label>
-                                    <select value={discountType} onChange={e => setDiscountType(e.target.value)} className="form-input text-sm w-28">
-                                        <option value="fixed">ETB  Fixed</option>
-                                        <option value="percentage">% Percent</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="form-label text-xs">Tax Rate (%)</label>
-                                <input type="number" min="0" max="100" value={taxRate} onChange={e => setTaxRate(e.target.value)} className="form-input text-sm" placeholder="0" />
-                            </div>
-                        </div>
-
                         {/* Summary */}
                         <div className="card p-4 space-y-2">
                             <div className="flex justify-between text-sm text-slate-600"><span>Subtotal</span><span className="font-medium">{fmt(subtotal)}</span></div>
-                            {discountAmt > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{fmt(discountAmt)}</span></div>}
-                            {taxAmt > 0 && <div className="flex justify-between text-sm text-slate-600"><span>Tax ({taxRate}%)</span><span>+{fmt(taxAmt)}</span></div>}
                             <div className="border-t border-slate-200 pt-2 flex justify-between text-lg font-bold text-slate-800">
                                 <span>Total</span><span className="text-sky-700">{fmt(total)}</span>
                             </div>

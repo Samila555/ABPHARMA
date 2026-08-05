@@ -38,7 +38,7 @@ export default function Reports() {
     const exportCSV = () => {
         if (!data) return;
         let rows = [];
-        if (activeTab === 'sales') rows = data.data?.map(r => [r.period, r.orders, r.revenue, r.discounts]) || [];
+        if (activeTab === 'sales') rows = data.data?.map(r => [r.period, r.orders, r.revenue]) || [];
         else if (activeTab === 'inventory') rows = data.data?.map(r => [r.name, r.quantity, r.min_stock_level, r.stock_status, r.total_value]) || [];
         const csv = rows.map(r => r.join(',')).join('\n');
         const blob = new Blob([csv], { type: 'text/csv' });
@@ -82,7 +82,6 @@ export default function Reports() {
                                 {[
                                     { label: 'Total Orders', value: data.summary?.total_orders || 0 },
                                     { label: 'Total Revenue', value: fmt(data.summary?.total_revenue) },
-                                    { label: 'Total Discounts', value: fmt(data.summary?.total_discounts) },
                                     { label: 'Avg Order Value', value: fmt(data.summary?.avg_order_value) },
                                 ].map(s => (
                                     <div key={s.label} className="card p-4 text-center">
@@ -105,15 +104,13 @@ export default function Reports() {
                             <div className="card overflow-hidden">
                                 <div className="overflow-x-auto">
                                     <table className="data-table">
-                                        <thead><tr><th>Period</th><th>Orders</th><th>Revenue</th><th>Discounts</th><th>Tax</th></tr></thead>
+                                        <thead><tr><th>Period</th><th>Orders</th><th>Revenue</th></tr></thead>
                                         <tbody>
                                             {data.data?.map((r, i) => (
                                                 <tr key={i}>
                                                     <td className="font-medium text-sm">{r.period}</td>
                                                     <td className="text-sm">{r.orders}</td>
                                                     <td className="font-semibold text-sm text-green-600">{fmt(r.revenue)}</td>
-                                                    <td className="text-sm text-amber-600">{fmt(r.discounts)}</td>
-                                                    <td className="text-sm">{fmt(r.taxes)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>

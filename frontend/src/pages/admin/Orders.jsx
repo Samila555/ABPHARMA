@@ -169,8 +169,6 @@ export default function Orders() {
                             </div>
                             <div className="border-t border-slate-200 pt-3 space-y-1">
                                 <div className="flex justify-between text-sm"><span className="text-slate-500">Subtotal</span><span>{fmt(selectedOrder.subtotal)}</span></div>
-                                {parseFloat(selectedOrder.discount) > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount</span><span>-{fmt(selectedOrder.discount)}</span></div>}
-                                {parseFloat(selectedOrder.tax) > 0 && <div className="flex justify-between text-sm"><span>Tax</span><span>+{fmt(selectedOrder.tax)}</span></div>}
                                 <div className="flex justify-between font-bold text-base"><span>Total</span><span className="text-sky-700">{fmt(selectedOrder.total)}</span></div>
                                 {selectedOrder.change_amount > 0 && <div className="flex justify-between text-sm text-green-600"><span>Change</span><span>{fmt(selectedOrder.change_amount)}</span></div>}
                             </div>
