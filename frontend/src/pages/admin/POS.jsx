@@ -72,17 +72,7 @@ export default function POS() {
         return () => clearTimeout(timer);
     }, [search]);
 
-    // Search customers
-    useEffect(() => {
-        if (!customerSearch.trim()) { setCustomers([]); return; }
-        const timer = setTimeout(async () => {
-            try {
-                const res = await api.get(`/customers?search=${encodeURIComponent(customerSearch)}&limit=5`);
-                setCustomers(res.data.data);
-            } catch { }
-        }, 300);
-        return () => clearTimeout(timer);
-    }, [customerSearch]);
+
 
     const addToCart = (medicine) => {
         if (medicine.quantity <= 0) return toast.error('Out of stock');
