@@ -77,6 +77,36 @@ connectDB().then(async () => {
         }
         if (deletedCount > 0) console.log(`✅ Auto-cleaned ${deletedCount} duplicate medicines`);
     } catch (e) { console.log('⚠️ Duplicate cleanup error:', e.message); }
+
+    // ── Ensure cashier accounts always exist ──────────────────────────────
+    try {
+        const bcrypt = require('bcryptjs');
+        const { pool } = require('./config/database');
+
+        const cashierAccounts = [
+            { name: 'Sami', email: 'sami@gmail.com', password: 'sami123@' },
+            { name: 'Abela', email: 'abela@gmail.com', password: 'abela123@' },
+        ];
+
+        for (const acc of cashierAccounts) {
+            const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [acc.email]);
+            const hashed = await bcrypt.hash(acc.password, 10);
+            if (existing.length === 0) {
+                await pool.query(
+                    'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+                    [acc.name, acc.email, hashed, 'cashier']
+                );
+                console.log(`✅ Cashier account created: ${acc.email}`);
+            } else {
+                // Update password in case it changed
+                await pool.query(
+                    'UPDATE users SET password = ?, role = ?, name = ? WHERE email = ?',
+                    [hashed, 'cashier', acc.name, acc.email]
+                );
+                console.log(`✅ Cashier account verified: ${acc.email}`);
+            }
+        }
+    } catch (e) { console.log('⚠️ Cashier account setup error:', e.message); }
 });
 
 // Security Middleware
