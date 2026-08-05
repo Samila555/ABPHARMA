@@ -174,27 +174,27 @@ export default function POS() {
         <div className="flex flex-col gap-4 h-[calc(100vh-100px)]">
 
             {/* Header with Mode Toggles */}
-            <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl shadow-sm border border-slate-200">
-                <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
-                    <MdPointOfSale className="text-sky-600" size={32} />
+            <div className="flex flex-col md:flex-row md:items-center justify-between bg-white px-6 py-4 rounded-2xl shadow-sm border border-slate-200 gap-4">
+                <h1 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-3 whitespace-nowrap">
+                    <MdPointOfSale className="text-sky-600 shrink-0" size={32} />
                     AB Pharma POS Center
                 </h1>
-                <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                <div className="flex flex-wrap bg-slate-100 p-1.5 rounded-xl border border-slate-200">
                     <button
                         onClick={() => setActiveTab('walkin')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold transition-all ${activeTab === 'walkin' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${activeTab === 'walkin' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <MdPointOfSale size={20} />
+                        <MdPointOfSale size={20} className="shrink-0" />
                         Walk-In Register
                     </button>
                     <button
                         onClick={() => setActiveTab('online')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold transition-all relative ${activeTab === 'online' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 rounded-lg font-bold transition-all relative whitespace-nowrap ${activeTab === 'online' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <FiUserCheck size={20} />
-                        Online Orders Verification
+                        <FiUserCheck size={20} className="shrink-0" />
+                        Online Orders
                         {activeTab === 'walkin' && pendingOrders.length > 0 && (
-                            <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs animate-bounce border-2 border-white">{pendingOrders.length}</span>
+                            <span className="absolute -top-1 -right-1 md:-top-2 md:-right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs animate-bounce border-2 border-white shadow-sm">{pendingOrders.length}</span>
                         )}
                     </button>
                 </div>
