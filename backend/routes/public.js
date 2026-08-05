@@ -34,7 +34,6 @@ router.get('/medicines', async (req, res) => {
         if (requires_prescription === 'true') { query += ' AND m.requires_prescription = 1'; }
         if (requires_prescription === 'false') { query += ' AND m.requires_prescription = 0'; }
 
-        // Build a clean separate count query using the same conditions
         let countSql = 'SELECT COUNT(*) as total FROM medicines m WHERE m.is_active = 1 AND m.status != \'discontinued\'';
         if (search) countSql += ' AND (m.name LIKE ? OR m.brand_name LIKE ? OR m.generic_name LIKE ? OR m.barcode LIKE ?)';
         if (category_id) countSql += ' AND m.category_id = ?';
@@ -133,7 +132,6 @@ router.post('/track-scan', async (req, res) => {
 // Public CMS content (hero, about, etc.)
 router.get('/cms', async (req, res) => {
     try {
-        // 'section' is the actual column name; aliased as section_key for frontend compatibility
         const [rows] = await pool.execute('SELECT section AS section_key, content FROM cms_content WHERE is_active = 1 ORDER BY id');
         res.json({ success: true, data: rows });
     } catch (error) {
@@ -142,38 +140,75 @@ router.get('/cms', async (req, res) => {
     }
 });
 
-// POST /api/public/orders (Customer Checkout with Screenshot)
+// POST /api/public/orders — Customer places an order with optional payment screenshot
 router.post('/orders', upload('payments').single('screenshot'), async (req, res) => {
     const conn = await pool.getConnection();
     await conn.beginTransaction();
     try {
         const { customer_name, customer_phone, customer_email, payment_method, items_json } = req.body;
-        const items = JSON.parse(items_json || '[]');
+
+        if (!customer_name || !customer_phone) {
+            conn.release();
+            return res.status(400).json({ success: false, message: 'Customer name and phone are required.' });
+        }
+
+        let items = [];
+        try { items = JSON.parse(items_json || '[]'); } catch { items = []; }
+        if (!items.length) {
+            conn.release();
+            return res.status(400).json({ success: false, message: 'No items in order.' });
+        }
 
         let subtotal = 0;
         for (const item of items) {
-            subtotal += (item.selling_price * item.quantity);
+            subtotal += parseFloat(item.selling_price || 0) * parseInt(item.quantity || 1);
         }
 
         const screenshotPath = req.file ? req.file.path : null;
         const order_number = generateOrderNumber();
 
-        const [orderResult] = await conn.execute(`
-            INSERT INTO orders (order_number, customer_name, customer_phone, customer_email,
-            order_type, payment_method, subtotal, total, amount_paid, change_amount,
-            status, payment_status, payment_screenshot)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-            [order_number, customer_name, customer_phone, customer_email || null,
-                'online', payment_method, subtotal, subtotal, 0, 0, 'pending', 'pending', screenshotPath]
+        // Ensure optional columns exist — silently skip if already present
+        await conn.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_screenshot LONGTEXT").catch(() => { });
+        await conn.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type VARCHAR(20) DEFAULT 'pos'").catch(() => { });
+        await conn.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT 'pending'").catch(() => { });
+
+        const [orderResult] = await conn.execute(
+            `INSERT INTO orders
+             (order_number, customer_name, customer_phone, customer_email,
+              order_type, payment_method, subtotal, total, amount_paid, change_amount,
+              status, payment_status, payment_screenshot)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+            [
+                order_number,
+                customer_name,
+                customer_phone,
+                customer_email || null,
+                'online',
+                payment_method || 'transfer',
+                subtotal,
+                subtotal,
+                0,
+                0,
+                'pending',
+                'pending',
+                screenshotPath
+            ]
         );
 
         const orderId = orderResult.insertId;
 
         for (const item of items) {
-            await conn.execute(`
-                INSERT INTO order_items (order_id, medicine_id, medicine_name, quantity, unit_price, total)
-                VALUES (?,?,?,?,?,?)`,
-                [orderId, item.id || null, item.name, item.quantity, item.selling_price, item.selling_price * item.quantity]
+            await conn.execute(
+                `INSERT INTO order_items (order_id, medicine_id, medicine_name, quantity, unit_price, total)
+                 VALUES (?,?,?,?,?,?)`,
+                [
+                    orderId,
+                    item.id || null,
+                    item.name || 'Unknown',
+                    parseInt(item.quantity) || 1,
+                    parseFloat(item.selling_price) || 0,
+                    parseFloat(item.selling_price || 0) * parseInt(item.quantity || 1)
+                ]
             );
         }
 
@@ -181,12 +216,11 @@ router.post('/orders', upload('payments').single('screenshot'), async (req, res)
         res.status(201).json({ success: true, message: 'Order submitted for verification.', order_number });
     } catch (error) {
         await conn.rollback();
-        console.error("Public Order Error:", error);
-        res.status(500).json({ success: false, message: 'Server error.', error: String(error) });
+        console.error('Public Order Error:', error.message, error.stack);
+        res.status(500).json({ success: false, message: error.message || 'Server error.' });
     } finally {
         conn.release();
     }
 });
 
 module.exports = router;
-

@@ -42,6 +42,9 @@ connectDB().then(async () => {
             'ALTER TABLE banners MODIFY COLUMN image LONGTEXT',
             'ALTER TABLE offers MODIFY COLUMN image LONGTEXT',
             'ALTER TABLE orders MODIFY COLUMN payment_screenshot LONGTEXT',
+            'ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_screenshot LONGTEXT',
+            'ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type VARCHAR(20) DEFAULT \'pos\'',
+            'ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT \'pending\'',
             'ALTER TABLE purchase_orders MODIFY COLUMN invoice_image LONGTEXT',
             'ALTER TABLE users MODIFY COLUMN avatar LONGTEXT',
         ];
