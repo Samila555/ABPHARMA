@@ -77,7 +77,7 @@ const CATEGORIES = [
 const CONTACTS = [
     { Icon: FiMapPin, text: 'Addis Abeba' },
     { Icon: FiPhone, text: '0901243826' },
-    { Icon: FiMail, text: 'abelzerfuone@gmail.com' },
+    { Icon: FiMail, text: 'abelzerfu144@gmail.com' },
 ];
 
 export default function CustomerFooter() {

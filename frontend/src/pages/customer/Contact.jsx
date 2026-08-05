@@ -53,7 +53,7 @@ export default function Contact() {
                         <div className="space-y-6">
                             {[
                                 { icon: Phone, title: 'Call Us 24/7', text: '+251 901 243 826' },
-                                { icon: Mail, title: 'Email Support', text: 'support@abpharma.com' },
+                                { icon: Mail, title: 'Email Support', text: 'abelzerfu144@gmail.com' },
                                 { icon: MapPin, title: 'Main Pharmacy', text: 'Addis Ababa, Ethiopia' }
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center gap-4 group">
