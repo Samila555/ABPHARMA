@@ -17,6 +17,7 @@ export default function POS() {
     const [taxRate, setTaxRate] = useState(0);
     const [paymentMethod, setPaymentMethod] = useState('cash');
     const [amountPaid, setAmountPaid] = useState('');
+    const [walkinScreenshot, setWalkinScreenshot] = useState(null); // Optional base64 for Walk-in POS
     const [loading, setLoading] = useState(false);
 
     // Modes: 'walkin' or 'online'
@@ -130,6 +131,7 @@ export default function POS() {
                 tax_rate: taxRate,
                 delivery_type: 'pickup',
                 amount_paid: parseFloat(amountPaid || total),
+                payment_screenshot: paymentMethod === 'transfer' ? walkinScreenshot : null
             };
             const res = await api.post('/orders', payload);
             toast.success(`Sale completed! Order: ${res.data.order_number}`);
@@ -140,6 +142,7 @@ export default function POS() {
             setAmountPaid('');
             setDiscount(0);
             setTaxRate(0);
+            setWalkinScreenshot(null);
         } catch (err) {
             toast.error(err.response?.data?.message || 'Checkout failed');
         } finally { setLoading(false); }
@@ -168,6 +171,15 @@ export default function POS() {
     `);
         win.print();
         win.close();
+    };
+
+    const handleWalkinScreenshot = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) return toast.error('File too large (max 5MB)');
+        const reader = new FileReader();
+        reader.onload = (ev) => setWalkinScreenshot(ev.target.result);
+        reader.readAsDataURL(file);
     };
 
     return (
@@ -349,6 +361,21 @@ export default function POS() {
                                 <input type="number" min="0" value={amountPaid} onChange={e => setAmountPaid(e.target.value)}
                                     className="form-input font-semibold text-lg" placeholder={total.toFixed(2)} />
                             </div>
+
+                            {/* Transfer Screenshot Upload (Optional) */}
+                            {paymentMethod === 'transfer' && (
+                                <div className="p-3 border border-dashed border-sky-300 bg-sky-50 rounded-xl space-y-2 mt-2">
+                                    <label className="text-xs font-bold text-sky-800 flex items-center gap-1"><FiImage /> Upload Receipt (Optional)</label>
+                                    {!walkinScreenshot ? (
+                                        <input type="file" accept="image/*" onChange={handleWalkinScreenshot} className="text-xs w-full file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-200 file:text-sky-800 hover:file:bg-sky-300" />
+                                    ) : (
+                                        <div className="flex items-center justify-between gap-3 bg-white p-2 rounded-lg border border-sky-100">
+                                            <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1"><FiCheckCircle size={14} /> Image Attached</span>
+                                            <button onClick={() => setWalkinScreenshot(null)} className="text-xs text-red-500 font-bold px-2 py-1 bg-red-50 rounded bg-red-100 hover:bg-red-200">Remove</button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                             {parseFloat(amountPaid) >= total && parseFloat(amountPaid) > 0 && (
                                 <div className="flex justify-between text-sm font-semibold text-green-600 bg-green-50 px-3 py-2 rounded-lg">
                                     <span>Change</span><span>{fmt(Math.max(0, change))}</span>

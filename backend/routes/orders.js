@@ -68,19 +68,21 @@ router.post('/', authenticate, async (req, res) => {
         const paidAmount = parseFloat(amount_paid) || total;
         const change = paidAmount - total;
         const order_number = generateOrderNumber();
+        const payment_screenshot = req.body.payment_screenshot || null; // Support upload from POS
 
         const [orderResult] = await conn.execute(`
       INSERT INTO orders (order_number, customer_id, customer_name, customer_phone, customer_email,
         order_type, payment_method, subtotal, discount, discount_type, tax, tax_rate, total,
         amount_paid, change_amount, delivery_type, delivery_address, delivery_fee,
-        prescription_id, notes, cashier_id, status, payment_status)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        prescription_id, notes, cashier_id, status, payment_status, payment_screenshot)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
             [order_number, customer_id || null, customer_name, customer_phone, customer_email,
                 order_type, payment_method, subtotal, discountAmount, discount_type, taxAmount,
                 tax_rate, total, paidAmount, Math.max(0, change), delivery_type, delivery_address,
                 delivery_fee, prescription_id || null, notes, req.user.id,
                 order_type === 'pos' ? 'completed' : 'pending',
-                order_type === 'pos' ? 'paid' : 'pending'
+                order_type === 'pos' ? 'paid' : 'pending',
+                payment_screenshot
             ]
         );
         const orderId = orderResult.insertId;
