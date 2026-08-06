@@ -12,6 +12,7 @@ import {
     FiMenu as Menu,
     FiX as X,
     FiShield,
+    FiShoppingCart,
     FiSun,
     FiMoon,
 } from 'react-icons/fi';
@@ -193,15 +194,16 @@ export default function CustomerNavbar() {
                             <Search size={18} aria-hidden="true" />
                         </button>
 
-                        {/* Bell */}
+                        {/* Cart */}
                         <div className="relative">
-                            <button
-                                aria-label={`Notifications ETB  ${cartCount > 0 ? cartCount : 1} unread`}
+                            <Link
+                                to="/cart"
+                                aria-label={`View Cart with ${cartCount} items`}
                                 className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-teal-600 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                             >
-                                <Bell size={18} aria-hidden="true" />
-                            </button>
-                            <Badge count={cartCount > 0 ? cartCount : 1} />
+                                <FiShoppingCart size={18} aria-hidden="true" />
+                            </Link>
+                            {cartCount > 0 && <Badge count={cartCount} />}
                         </div>
 
                         {/* Day / Night Toggle */}
